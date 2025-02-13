@@ -14,6 +14,7 @@ type Post = {
     avatar_url: string;
   };
   cv: {
+    id: string;
     template: string;
     personal_info: {
       full_name: string;
@@ -55,12 +56,7 @@ export default function Creators() {
           cv:cvs(
             id,
             template,
-            personal_info,
-            education,
-            experience,
-            skills,
-            languages,
-            certifications
+            personal_info
           ),
           likes:post_likes(count),
           comments:post_comments(
@@ -152,31 +148,9 @@ export default function Creators() {
     }
   };
 
-  const handleUseTemplate = (cvData: Post['cv']) => {
-    if (!user) {
-      return;
-    }
-    
-    if (!cvData) {
-      console.error('No CV data available');
-      return;
-    }
-
-    // Navigate to CV editor with complete template data
-    navigate('/cv-editor', { 
-      state: { 
-        template: cvData.template,
-        isTemplate: true,
-        cvData: {
-          personal_info: cvData.personal_info,
-          education: cvData.education,
-          experience: cvData.experience,
-          skills: cvData.skills,
-          languages: cvData.languages,
-          certifications: cvData.certifications
-        }
-      } 
-    });
+  const handleUseTemplate = (postId: string) => {
+    if (!user) return;
+    navigate(`/cv/use/${postId}`);
   };
 
   const handleDeletePost = async (postId: string) => {
@@ -264,20 +238,20 @@ export default function Creators() {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-xl font-bold text-gray-900">
-                      {post.cv?.personal_info?.full_name || post.user?.display_name || 'Unnamed CV'}
+                      {post.cv?.personal_info?.full_name || 'Unnamed CV'}
                     </h3>
                     <p className="text-sm text-gray-500 mt-1">
-                      by {post.user?.display_name}
+                      Template by {post.user?.display_name}
                     </p>
                   </div>
                   <button
-                    onClick={() => handleUseTemplate(post.cv)}
+                    onClick={() => handleUseTemplate(post.id)}
                     className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
                       user 
                         ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                         : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     }`}
-                    disabled={!user || !post.cv}
+                    disabled={!user}
                   >
                     {user ? (
                       <>
@@ -294,31 +268,17 @@ export default function Creators() {
                 </div>
                 
                 {/* Show CV summary if available */}
-                {post.cv?.personal_info?.summary ? (
+                {post.cv?.personal_info?.summary && (
                   <div className="prose prose-sm max-w-none text-gray-600 mb-4">
                     <h4 className="text-sm font-medium text-gray-900 mb-2">Professional Summary</h4>
                     <p>{post.cv.personal_info.summary}</p>
                   </div>
-                ) : (
-                  <p className="text-gray-500 italic mb-4">No professional summary available</p>
                 )}
 
                 {/* Show template info */}
                 <div className="text-sm text-gray-500">
                   <span className="font-medium">Template:</span> {post.cv?.template || 'N/A'}
                 </div>
-
-                {/* Optional: Show additional CV sections preview */}
-                {post.cv && (
-                  <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-600">
-                    <div>
-                      <span className="font-medium">Skills:</span> {post.cv.skills?.length || 0} listed
-                    </div>
-                    <div>
-                      <span className="font-medium">Experience:</span> {post.cv.experience?.length || 0} entries
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Caption */}
