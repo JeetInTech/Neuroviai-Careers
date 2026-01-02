@@ -17,10 +17,14 @@ import type { CV } from '../../lib/database.types';
 // SHARED COMPONENTS
 // =============================================================================
 
-interface TemplateProps {
+export interface TemplateProps {
   cv: CV;
   isViewMode?: boolean;
+  sectionOrder?: string[];
 }
+
+// Default section order
+const DEFAULT_SECTION_ORDER = ['summary', 'skills', 'experience', 'education', 'projects', 'certifications', 'languages'];
 
 // Contact Info Bar
 const ContactBar: React.FC<{ personal: CV['personal_info'] }> = ({ personal }) => {
@@ -924,6 +928,181 @@ export const TEMPLATE_COMPONENTS: Record<string, React.FC<TemplateProps>> = {
 // Default template selector
 export const getTemplateComponent = (templateName: string): React.FC<TemplateProps> => {
   return TEMPLATE_COMPONENTS[templateName] || ProfessionalTemplate;
+};
+
+// Ordered Template Wrapper - renders sections in specified order
+export const OrderedTemplate: React.FC<TemplateProps & { templateName?: string }> = ({ 
+  cv, 
+  isViewMode, 
+  sectionOrder = DEFAULT_SECTION_ORDER,
+  templateName = 'professional'
+}) => {
+  const renderSection = (sectionName: string) => {
+    switch (sectionName) {
+      case 'summary':
+        return cv.personal_info.summary ? (
+          <section key="summary" className="mb-6">
+            <SectionHeader title="Professional Summary" />
+            <p className="text-gray-700 text-sm leading-relaxed">{cv.personal_info.summary}</p>
+          </section>
+        ) : null;
+      
+      case 'experience':
+        return cv.experience.length > 0 ? (
+          <section key="experience" className="mb-6">
+            <SectionHeader title="Experience" />
+            <div className="space-y-4">
+              {cv.experience.map((exp, idx) => (
+                <div key={idx} className="pb-3">
+                  <div className="flex justify-between items-baseline flex-wrap gap-2">
+                    <h3 className="text-base font-semibold text-gray-900">{exp.title}</h3>
+                    {formatDateRange(exp.start_date, exp.end_date, exp.current) && (
+                      <span className="text-sm text-gray-600">
+                        {formatDateRange(exp.start_date, exp.end_date, exp.current)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700 font-medium">{exp.company}{exp.location ? ` | ${exp.location}` : ''}</p>
+                  {exp.achievements && exp.achievements.length > 0 ? (
+                    <ul className="list-disc list-inside mt-2 text-sm text-gray-700 space-y-1">
+                      {exp.achievements.map((achievement, aIdx) => (
+                        <li key={aIdx}>{achievement}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-700 whitespace-pre-line">{exp.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null;
+      
+      case 'education':
+        return cv.education.length > 0 ? (
+          <section key="education" className="mb-6">
+            <SectionHeader title="Education" />
+            <div className="space-y-3">
+              {cv.education.map((edu, idx) => (
+                <div key={idx}>
+                  <div className="flex justify-between items-baseline flex-wrap gap-2">
+                    <h3 className="text-base font-semibold text-gray-900">
+                      {edu.degree}{edu.field_of_study ? ` in ${edu.field_of_study}` : ''}
+                    </h3>
+                    {formatDateRange(edu.start_date, edu.end_date) && (
+                      <span className="text-sm text-gray-600">
+                        {formatDateRange(edu.start_date, edu.end_date)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700">{edu.institution}{edu.location ? ` | ${edu.location}` : ''}</p>
+                  {edu.gpa && <p className="text-sm text-gray-600 mt-1">GPA: {edu.gpa}</p>}
+                  {edu.description && <p className="text-sm text-gray-600 mt-1">{edu.description}</p>}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null;
+      
+      case 'skills':
+        return cv.skills.length > 0 ? (
+          <section key="skills" className="mb-6">
+            <SectionHeader title="Skills" />
+            <div className="space-y-2">
+              {Object.entries(
+                cv.skills.reduce((acc, skill) => {
+                  const cat = skill.category || 'Other';
+                  if (!acc[cat]) acc[cat] = [];
+                  acc[cat].push(skill.name);
+                  return acc;
+                }, {} as Record<string, string[]>)
+              ).map(([category, skills], idx) => (
+                <p key={idx} className="text-sm text-gray-700">
+                  <span className="font-semibold">{category}:</span> {skills.join(', ')}
+                </p>
+              ))}
+            </div>
+          </section>
+        ) : null;
+      
+      case 'projects':
+        return cv.projects && cv.projects.length > 0 ? (
+          <section key="projects" className="mb-6">
+            <SectionHeader title="Projects" />
+            <div className="space-y-3">
+              {cv.projects.map((project, idx) => (
+                <div key={idx}>
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <h3 className="text-base font-semibold text-gray-900">{project.name}</h3>
+                    {project.url && (
+                      <a href={project.url} target="_blank" rel="noopener noreferrer" 
+                         className="text-xs text-indigo-600 hover:underline">[Live]</a>
+                    )}
+                    {project.github_url && (
+                      <a href={project.github_url} target="_blank" rel="noopener noreferrer"
+                         className="text-xs text-indigo-600 hover:underline">[GitHub]</a>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700 mt-1">{project.description}</p>
+                  {project.technologies.length > 0 && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      <span className="font-medium">Tech:</span> {project.technologies.join(', ')}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null;
+      
+      case 'certifications':
+        return cv.certifications.length > 0 ? (
+          <section key="certifications" className="mb-6">
+            <SectionHeader title="Certifications" />
+            <ul className="space-y-1">
+              {cv.certifications.map((cert, idx) => (
+                <li key={idx} className="text-sm text-gray-700">
+                  <span className="font-medium">{cert.name}</span> – {cert.issuer} ({formatDate(cert.date)})
+                  {cert.url && (
+                    <a href={cert.url} target="_blank" rel="noopener noreferrer"
+                       className="ml-2 text-indigo-600 hover:underline text-xs">[View]</a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null;
+      
+      case 'languages':
+        return cv.languages.length > 0 ? (
+          <section key="languages" className="mb-6">
+            <SectionHeader title="Languages" />
+            <p className="text-sm text-gray-700">
+              {cv.languages.map(lang => `${lang.name} (${lang.proficiency})`).join(', ')}
+            </p>
+          </section>
+        ) : null;
+      
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="bg-white shadow-lg rounded-lg p-8 max-w-[8.5in] mx-auto font-sans leading-relaxed">
+      {/* Header */}
+      <header className="text-center mb-6 pb-4 border-b-2 border-gray-800">
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+          {cv.personal_info.full_name}
+        </h1>
+        <ContactBar personal={cv.personal_info} />
+        <SocialLinks personal={cv.personal_info} />
+      </header>
+
+      {/* Render sections in specified order */}
+      {sectionOrder.map(section => renderSection(section))}
+    </div>
+  );
 };
 
 // Template metadata for UI

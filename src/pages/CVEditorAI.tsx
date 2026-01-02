@@ -16,7 +16,7 @@ import { jsPDF } from 'jspdf';
 import ShareCVDialog from '../components/ShareCVDialog';
 import DocumentUpload from '../components/DocumentUpload';
 import { downloadLaTeX, getRecommendedTemplate } from '../lib/latex-generator';
-import { getTemplateComponent } from '../components/templates';
+import { getTemplateComponent, OrderedTemplate } from '../components/templates';
 import { TemplateDropdown } from '../components/TemplateSelector';
 
 // AI Button Component with loading state
@@ -816,9 +816,8 @@ export default function CVEditor() {
 
   const renderTemplate = () => {
     if (!cv) return null;
-    const templateId = cv.template || cv.target_role || 'professional';
-    const TemplateComponent = getTemplateComponent(templateId);
-    return <TemplateComponent cv={cv} isViewMode={true} />;
+    // Use OrderedTemplate which respects section order
+    return <OrderedTemplate cv={cv} isViewMode={true} sectionOrder={sectionOrder} templateName={cv.template || cv.target_role || 'professional'} />;
   };
 
   if (loading) {
