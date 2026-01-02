@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Home, Menu, X, Users, Briefcase, User } from 'lucide-react';
+import { Home, Menu, X, FileText, User, Sparkles } from 'lucide-react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,45 +13,53 @@ export default function Navbar() {
   const NavLink = ({ to, icon: Icon, children }: { to: string; icon: React.ElementType; children: React.ReactNode }) => (
     <Link
       to={to}
-      className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+      className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
         isActive(to)
           ? 'bg-indigo-100 text-indigo-700'
           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
       }`}
       onClick={() => setIsOpen(false)}
     >
-      <Icon className="mr-3 h-5 w-5" />
+      <Icon className="mr-2 h-4 w-4" />
       {children}
     </Link>
   );
 
   return (
-    <nav className="bg-white shadow-sm">
+    <nav className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          {/* Desktop Navigation */}
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Briefcase className="h-8 w-8 text-indigo-600" />
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-4">
+          {/* Logo & Desktop Navigation */}
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center space-x-2">
+              <FileText className="h-8 w-8 text-indigo-600" />
+              <span className="text-xl font-bold text-gray-900">CV Forge</span>
+            </Link>
+            <div className="hidden sm:ml-8 sm:flex sm:space-x-2">
               <NavLink to="/" icon={Home}>Home</NavLink>
-              <NavLink to="/creators" icon={Users}>Creators</NavLink>
-              {user && <NavLink to="/portfolio" icon={Briefcase}>My Portfolio</NavLink>}
+              {user && <NavLink to="/portfolio" icon={Sparkles}>My Resumes</NavLink>}
             </div>
           </div>
 
           {/* User Menu (Desktop) */}
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+          <div className="hidden sm:flex sm:items-center sm:space-x-4">
             {user ? (
               <NavLink to="/profile" icon={User}>Profile</NavLink>
             ) : (
-              <Link
-                to="/login"
-                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
-              >
-                Sign In
-              </Link>
+              <div className="flex items-center space-x-3">
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Get Started
+                </Link>
+              </div>
             )}
           </div>
 
@@ -72,21 +80,29 @@ export default function Navbar() {
       </div>
 
       {/* Mobile menu */}
-      <div className={`${isOpen ? 'block' : 'hidden'} sm:hidden`}>
-        <div className="pt-2 pb-3 space-y-1">
+      <div className={`${isOpen ? 'block' : 'hidden'} sm:hidden border-t border-gray-100`}>
+        <div className="pt-2 pb-3 space-y-1 px-2">
           <NavLink to="/" icon={Home}>Home</NavLink>
-          <NavLink to="/creators" icon={Users}>Creators</NavLink>
-          {user && <NavLink to="/portfolio" icon={Briefcase}>My Portfolio</NavLink>}
+          {user && <NavLink to="/portfolio" icon={Sparkles}>My Resumes</NavLink>}
           {user ? (
             <NavLink to="/profile" icon={User}>Profile</NavLink>
           ) : (
-            <Link
-              to="/login"
-              className="flex items-center mx-4 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
-              onClick={() => setIsOpen(false)}
-            >
-              Sign In
-            </Link>
+            <div className="space-y-2 pt-2">
+              <Link
+                to="/login"
+                className="block w-full px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md"
+                onClick={() => setIsOpen(false)}
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signup"
+                className="block w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 text-center"
+                onClick={() => setIsOpen(false)}
+              >
+                Get Started
+              </Link>
+            </div>
           )}
         </div>
       </div>

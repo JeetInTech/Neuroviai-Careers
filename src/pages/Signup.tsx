@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { UserPlus, Mail, Lock, ArrowLeft, User, UserCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { UserPlus, Mail, Lock, ArrowLeft, User, UserCircle, Eye, EyeOff, Copy, Check, X, CheckCircle } from 'lucide-react';
+import api from '../lib/api';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -14,6 +14,16 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState(true);
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | ''>('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const copyPassword = () => {
+    navigator.clipboard.writeText(password);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -77,26 +87,11 @@ export default function Signup() {
       setError('');
       setLoading(true);
 
-      // Create auth user
-      const { error: signUpError } = await signUp(email, password);
-      if (signUpError) throw signUpError;
+      // Create account via FastAPI backend (auto-confirms email)
+      await signUp(email, password, username, displayName);
 
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            email,
-            username,
-            display_name: displayName,
-            cv_credits: 2,
-            subscription_status: 'free'
-          }
-        ]);
-
-      if (profileError) throw profileError;
-
-      navigate('/login');
+      // Show success modal
+      setShowSuccessModal(true);
     } catch (error: any) {
       setError(error.message || 'Failed to create account');
     } finally {
@@ -105,34 +100,104 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <UserPlus className="w-12 h-12 text-indigo-600" />
-        </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create your account
-        </h2>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
-                {error}
+    <>
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+              onClick={() => {}}
+            />
+            
+            {/* Modal */}
+            <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-8 transform transition-all">
+              {/* Email Icon */}
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 mb-6">
+                <Mail className="h-10 w-10 text-indigo-600" />
               </div>
-            )}
-
-            <div>
-              <label htmlFor="display-name" className="block text-sm font-medium text-gray-700">
-                Display Name
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <UserCircle className="h-5 w-5 text-gray-400" />
+              
+              {/* Content */}
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Check Your Email!
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  We've sent a confirmation link to:
+                </p>
+                
+                {/* Email Address */}
+                <div className="bg-indigo-50 rounded-lg p-3 mb-4">
+                  <span className="text-indigo-700 font-semibold">{email}</span>
                 </div>
-                <input
+                
+                <p className="text-gray-500 text-sm mb-6">
+                  Please click the link in the email to verify your account before signing in.
+                  Don't forget to check your spam folder!
+                </p>
+                
+                {/* Account Details */}
+                <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+                  <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Your Account Details</p>
+                  <div className="flex items-center mb-2">
+                    <User className="h-4 w-4 text-gray-400 mr-2" />
+                    <span className="text-sm text-gray-600">Username:</span>
+                    <span className="text-sm font-medium text-gray-900 ml-2">@{username}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <UserCircle className="h-4 w-4 text-gray-400 mr-2" />
+                    <span className="text-sm text-gray-600">Display Name:</span>
+                    <span className="text-sm font-medium text-gray-900 ml-2">{displayName || username}</span>
+                  </div>
+                </div>
+                
+                {/* Action Button */}
+                <button
+                  onClick={() => navigate('/login')}
+                  className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  I've Confirmed My Email - Sign In
+                </button>
+                
+                <p className="text-xs text-gray-400 mt-4">
+                  Didn't receive the email? Check your spam folder or try signing up again.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="flex justify-center">
+            <UserPlus className="w-12 h-12 text-indigo-600" />
+          </div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Create your account
+          </h2>
+        </div>
+
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {error && (
+                <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
+                  {error}
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="display-name" className="block text-sm font-medium text-gray-700">
+                  Display Name
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <UserCircle className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
                   id="display-name"
                   type="text"
                   required
@@ -199,13 +264,33 @@ export default function Signup() {
                 </div>
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full pl-10 pr-20 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center space-x-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                  {password && (
+                    <button
+                      type="button"
+                      onClick={copyPassword}
+                      className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                      title="Copy password"
+                    >
+                      {copied ? <Check className="h-5 w-5 text-green-500" /> : <Copy className="h-5 w-5" />}
+                    </button>
+                  )}
+                </div>
               </div>
               {passwordStrength && (
                 <div className="mt-1 flex items-center">
@@ -229,13 +314,23 @@ export default function Signup() {
                 </div>
                 <input
                   id="confirm-password"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   required
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    title={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -272,5 +367,6 @@ export default function Signup() {
         </div>
       </div>
     </div>
+    </>
   );
 }

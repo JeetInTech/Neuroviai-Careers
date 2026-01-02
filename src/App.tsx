@@ -6,20 +6,24 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Profile from './pages/Profile';
 import CVMaker from './pages/Portfolio';
-import CVEditor from './pages/CVEditor';
-import UseTemplate from './pages/UseTemplate';
+import CVEditor from './pages/CVEditorAI';
 import Home from './pages/Home';
 import ForgotPassword from './pages/ForgotPassword';
-import Creators from './pages/Creators';
 import { useAuth } from './contexts/AuthContext';
 
+/**
+ * Protected route wrapper - redirects to login if not authenticated
+ */
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
+          <p className="text-gray-500">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -27,6 +31,9 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return user ? <>{children}</> : <Navigate to="/login" />;
 }
 
+/**
+ * Main App Component - CV Forge
+ */
 function App() {
   return (
     <Router>
@@ -35,10 +42,13 @@ function App() {
           <Navbar />
           <main>
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              
+              {/* Protected Routes */}
               <Route
                 path="/profile"
                 element={
@@ -47,7 +57,6 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route path="/creators" element={<Creators />} />
               <Route
                 path="/portfolio"
                 element={
@@ -65,13 +74,16 @@ function App() {
                 }
               />
               <Route
-                path="/cv/use/:id"
+                path="/cv/new"
                 element={
                   <PrivateRoute>
-                    <UseTemplate />
+                    <CVEditor />
                   </PrivateRoute>
                 }
               />
+              
+              {/* Catch-all redirect */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
         </div>

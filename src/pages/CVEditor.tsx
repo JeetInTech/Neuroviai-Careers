@@ -1,116 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
-import type { CV } from '../lib/database.types';
-import { FileText, Download, Share2, Save, ArrowLeft, Eye } from 'lucide-react';
+import api from '../lib/api';
+import type { CV, LaTeXExportOptions } from '../lib/database.types';
+import { Download, Share2, Save, ArrowLeft, Eye, Palette } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import ShareCVDialog from '../components/ShareCVDialog';
-
-// Add template type definition
-type TemplateType = 'Modern' | 'Classic' | 'Creative' | 'Acting & Performance' | 'Academic';
-
-// Add template-specific rendering components
-const ActingTemplate = ({ cv, isViewMode }: { cv: CV; isViewMode: boolean }) => (
-  <div className="bg-white shadow rounded-lg p-8">
-    {/* Acting & Performance specific layout */}
-    <div className="text-center mb-8">
-      <h1 className="text-3xl font-bold text-gray-900">{cv.personal_info.full_name}</h1>
-      <div className="mt-2 text-gray-600">
-        <p>{cv.personal_info.email} • {cv.personal_info.phone}</p>
-        <p>{cv.personal_info.address}</p>
-      </div>
-    </div>
-
-    {/* Performance Summary */}
-    {cv.personal_info.summary && (
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-3">Performance Profile</h2>
-        <p className="text-gray-700 italic">{cv.personal_info.summary}</p>
-      </div>
-    )}
-
-    {/* Skills - Displayed prominently for acting skills */}
-    {cv.skills.length > 0 && (
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-3">Performance Skills</h2>
-        <div className="grid grid-cols-2 gap-4">
-          {cv.skills.map((skill, index) => (
-            <div key={index} className="bg-gray-50 p-3 rounded">
-              <p className="font-medium text-gray-900">{skill.name}</p>
-              <p className="text-sm text-gray-500">{skill.category}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-
-    {/* Performance Experience */}
-    {cv.experience.length > 0 && (
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-3">Performance Experience</h2>
-        <div className="space-y-6">
-          {cv.experience.map((exp, index) => (
-            <div key={index} className="border-l-4 border-indigo-500 pl-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">{exp.title}</h3>
-                  <p className="text-indigo-600">{exp.company}</p>
-                  <p className="text-gray-600">{exp.location}</p>
-                </div>
-                <p className="text-sm text-gray-500">
-                  {exp.start_date} - {exp.current ? 'Present' : exp.end_date}
-                </p>
-              </div>
-              <p className="mt-2 text-gray-700 italic">{exp.description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-
-    {/* Training/Education */}
-    {cv.education.length > 0 && (
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-3">Training & Education</h2>
-        <div className="space-y-6">
-          {cv.education.map((edu, index) => (
-            <div key={index}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">{edu.degree}</h3>
-                  <p className="text-gray-600">{edu.institution}</p>
-                  <p className="text-gray-500">{edu.location}</p>
-                </div>
-                <p className="text-sm text-gray-500">
-                  {edu.start_date} - {edu.end_date}
-                </p>
-              </div>
-              <p className="mt-2 text-gray-700">{edu.description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-  </div>
-);
-
-const AcademicTemplate = ({ cv, isViewMode }: { cv: CV; isViewMode: boolean }) => (
-  <div className="bg-white shadow rounded-lg p-8">
-    {/* Academic-specific layout */}
-    <div className="mb-8">
-      <h1 className="text-4xl font-serif text-gray-900">{cv.personal_info.full_name}</h1>
-      <div className="mt-4 text-gray-600">
-        <p>{cv.personal_info.email} • {cv.personal_info.phone}</p>
-        <p>{cv.personal_info.address}</p>
-      </div>
-    </div>
-
-    {/* Publications, Research, etc. */}
-    {/* ... Academic-specific sections ... */}
-  </div>
-);
+import { downloadLaTeX, getRecommendedTemplate } from '../lib/latex-generator';
+import { getTemplateComponent, TEMPLATE_INFO } from '../components/templates';
+import { TemplateDropdown } from '../components/TemplateSelector';
 
 export default function CVEditor() {
   const { id } = useParams();
@@ -161,16 +60,10 @@ export default function CVEditor() {
     if (!isTemplate && user && id) {
       const loadCV = async () => {
         try {
-          const { data, error } = await supabase
-            .from('cvs')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-          if (error) throw error;
+          const data = await api.getCV(id);
           if (!data) throw new Error('CV not found');
           
-          setCV(data);
+          setCV(data as unknown as CV);
         } catch (error) {
           console.error('Error loading CV:', error);
           setError('Failed to load CV');
@@ -190,36 +83,32 @@ export default function CVEditor() {
       setSaving(true);
       setError('');
 
-      // If this is a new CV from a template
-      if (isTemplate) {
-        const { data, error: insertError } = await supabase
-          .from('cvs')
-          .insert({
-            ...cv,
-            user_id: user.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+      const cvPayload = {
+        template: cv.template,
+        target_role: cv.target_role,
+        personal_info: cv.personal_info,
+        education: cv.education,
+        experience: cv.experience,
+        skills: cv.skills,
+        languages: cv.languages,
+        certifications: cv.certifications,
+        projects: cv.projects || [],
+      };
 
-        if (insertError) throw insertError;
-        if (data) {
-          setCV(data);
+      // If this is a new CV from a template
+      if (isTemplate || !cv.id) {
+        const result = await api.createCV(cvPayload);
+        if (result.success && result.cv) {
+          setCV(result.cv as unknown as CV);
           // Redirect to the new CV's edit page
-          navigate(`/cv/${data.id}`);
+          navigate(`/cv/edit/${result.cv.id}`, { replace: true });
         }
       } else {
         // Update existing CV
-        const { error: updateError } = await supabase
-          .from('cvs')
-          .update({
-            ...cv,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', cv.id);
-
-        if (updateError) throw updateError;
+        const result = await api.updateCV(cv.id, cvPayload);
+        if (result.success && result.cv) {
+          setCV(result.cv as unknown as CV);
+        }
       }
     } catch (error) {
       console.error('Error saving CV:', error);
@@ -314,146 +203,56 @@ export default function CVEditor() {
     setShowDownloadMenu(false);
   };
 
+  const handleDownloadLaTeX = () => {
+    if (!cv) return;
+
+    // Get the recommended LaTeX template based on CV template or target role
+    let latexTemplate: LaTeXExportOptions['template'] = 'professional';
+
+    // Extended template mapping for all available templates
+    const templateMap: Record<string, LaTeXExportOptions['template']> = {
+      'modern-minimal': 'minimal',
+      'minimal': 'minimal',
+      'tech-focused': 'software-engineer',
+      'software-engineer': 'software-engineer',
+      'classic-professional': 'professional',
+      'professional': 'professional',
+      'fresher': 'fresher',
+      'entry-level': 'fresher',
+      'data-scientist': 'data-scientist',
+      'data-science': 'data-scientist',
+      'ai-ml-engineer': 'ai-ml',
+      'ai-ml': 'ai-ml',
+      'executive': 'professional',
+      'creative': 'minimal',
+      'freelancer': 'professional',
+    };
+
+    if (cv.template && templateMap[cv.template]) {
+      latexTemplate = templateMap[cv.template];
+    } else if (cv.target_role) {
+      latexTemplate = getRecommendedTemplate(cv.target_role);
+    }
+
+    downloadLaTeX(cv, undefined, { template: latexTemplate });
+    setShowDownloadMenu(false);
+  };
+
   // Add template selection handling
   const renderTemplate = () => {
     if (!cv) return null;
 
-    switch (cv.template as TemplateType) {
-      case 'Acting & Performance':
-        return <ActingTemplate cv={cv} isViewMode={isViewMode} />;
-      case 'Academic':
-        return <AcademicTemplate cv={cv} isViewMode={isViewMode} />;
-      // Add other template cases here
-      default:
-        return (
-          // Default template (existing view mode template)
-          <div className="bg-white shadow rounded-lg p-8">
-            {/* Personal Info */}
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">{cv.personal_info.full_name}</h1>
-              <div className="mt-2 text-gray-600">
-                <p>{cv.personal_info.email} • {cv.personal_info.phone}</p>
-                <p>{cv.personal_info.address}</p>
-              </div>
-            </div>
+    // Get the appropriate template component based on template name or target role
+    const templateId = cv.template || cv.target_role || 'professional';
+    const TemplateComponent = getTemplateComponent(templateId);
+    
+    return <TemplateComponent cv={cv} isViewMode={isViewMode} />;
+  };
 
-            {/* Summary */}
-            {cv.personal_info.summary && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-3">Professional Summary</h2>
-                <p className="text-gray-700">{cv.personal_info.summary}</p>
-              </div>
-            )}
-
-            {/* Experience */}
-            {cv.experience.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-3">Experience</h2>
-                <div className="space-y-6">
-                  {cv.experience.map((exp, index) => (
-                    <div key={index}>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-lg font-medium text-gray-900">{exp.title}</h3>
-                          <p className="text-gray-600">{exp.company} • {exp.location}</p>
-                        </div>
-                        <p className="text-sm text-gray-500">
-                          {exp.start_date} - {exp.current ? 'Present' : exp.end_date}
-                        </p>
-                      </div>
-                      <p className="mt-2 text-gray-700">{exp.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Education */}
-            {cv.education.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-3">Education</h2>
-                <div className="space-y-6">
-                  {cv.education.map((edu, index) => (
-                    <div key={index}>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-lg font-medium text-gray-900">{edu.degree}</h3>
-                          <p className="text-gray-600">{edu.institution} • {edu.location}</p>
-                        </div>
-                        <p className="text-sm text-gray-500">
-                          {edu.start_date} - {edu.end_date}
-                        </p>
-                      </div>
-                      <p className="mt-2 text-gray-700">{edu.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Skills */}
-            {cv.skills.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-3">Skills</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  {cv.skills.map((skill, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{skill.name}</p>
-                        <p className="text-sm text-gray-500">{skill.category}</p>
-                      </div>
-                      <span className="text-sm text-gray-600">
-                        {['Beginner', 'Intermediate', 'Advanced', 'Expert', 'Master'][skill.level - 1]}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Languages */}
-            {cv.languages.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-3">Languages</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  {cv.languages.map((lang, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <p className="font-medium text-gray-900">{lang.name}</p>
-                      <p className="text-sm text-gray-600">{lang.proficiency}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Certifications */}
-            {cv.certifications.length > 0 && (
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-3">Certifications</h2>
-                <div className="space-y-4">
-                  {cv.certifications.map((cert, index) => (
-                    <div key={index}>
-                      <h3 className="font-medium text-gray-900">{cert.name}</h3>
-                      <p className="text-sm text-gray-600">
-                        {cert.issuer} • {cert.date}
-                      </p>
-                      {cert.url && (
-                        <a
-                          href={cert.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-indigo-600 hover:text-indigo-500"
-                        >
-                          View Certificate
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        );
+  // Handle template change
+  const handleTemplateChange = (newTemplate: string) => {
+    if (cv) {
+      setCV({ ...cv, template: newTemplate });
     }
   };
 
@@ -552,12 +351,40 @@ export default function CVEditor() {
                     >
                       Download as Word
                     </button>
+                    <button
+                      onClick={handleDownloadLaTeX}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Download as LaTeX
+                    </button>
                   </div>
                 </div>
               )}
             </div>
           </div>
         </div>
+
+        {/* Template Selector - Show in view mode */}
+        {isViewMode && (
+          <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Palette className="h-5 w-5 text-indigo-600" />
+                <span className="text-sm font-medium text-gray-700">Template:</span>
+                <div className="w-64">
+                  <TemplateDropdown
+                    selectedTemplate={cv.template || 'professional'}
+                    onSelectTemplate={handleTemplateChange}
+                    targetRole={cv.target_role}
+                  />
+                </div>
+              </div>
+              <div className="text-sm text-gray-500">
+                {TEMPLATE_INFO.find(t => t.id === (cv.template || 'professional'))?.description}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* CV Content */}
         <div ref={cvRef}>
@@ -1010,7 +837,7 @@ export default function CVEditor() {
                       ...cv,
                       languages: [...cv.languages, {
                         name: '',
-                        proficiency: 'beginner'
+                        proficiency: 'basic' as const
                       }]
                     })}
                     className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
@@ -1054,16 +881,15 @@ export default function CVEditor() {
                             value={lang.proficiency}
                             onChange={(e) => {
                               const newLanguages = [...cv.languages];
-                              newLanguages[index].proficiency = e.target.value;
+                              newLanguages[index].proficiency = e.target.value as 'basic' | 'conversational' | 'professional' | 'native';
                               setCV({ ...cv, languages: newLanguages });
                             }}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                           >
-                            <option value="beginner">Beginner</option>
-                            <option value="intermediate">Intermediate</option>
-                            <option value="advanced">Advanced</option>
+                            <option value="basic">Basic</option>
+                            <option value="conversational">Conversational</option>
+                            <option value="professional">Professional</option>
                             <option value="native">Native</option>
-                            <option value="fluent">Fluent</option>
                           </select>
                         </div>
                       </div>

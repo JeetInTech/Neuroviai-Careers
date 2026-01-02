@@ -1,0 +1,158 @@
+"""
+AI Router - Endpoints for AI-powered CV content generation
+"""
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional, Dict, Any
+
+from ..services.ai_service import ai_service
+
+router = APIRouter(prefix="/ai", tags=["AI"])
+
+
+class SummaryRequest(BaseModel):
+    job_title: str
+    experience_years: int = 0
+    skills: List[str] = []
+    tone: str = "professional"
+
+
+class ExperienceRequest(BaseModel):
+    job_title: str
+    company: str = ""
+    responsibilities: str = ""
+    num_bullets: int = 4
+
+
+class SkillsRequest(BaseModel):
+    job_title: str
+    category: str = "technical"
+    num_skills: int = 8
+
+
+class EnhanceRequest(BaseModel):
+    text: str
+    context: str = "professional CV"
+
+
+class EducationRequest(BaseModel):
+    degree: str
+    field: str
+    achievements: str = ""
+
+
+class SuggestionsRequest(BaseModel):
+    cv_data: Dict[str, Any]
+
+
+class SummaryResponse(BaseModel):
+    summary: str
+
+
+class BulletsResponse(BaseModel):
+    bullets: List[str]
+
+
+class SkillsResponse(BaseModel):
+    skills: List[str]
+
+
+class EnhanceResponse(BaseModel):
+    enhanced_text: str
+
+
+class EducationResponse(BaseModel):
+    description: str
+
+
+class SuggestionItem(BaseModel):
+    section: str
+    issue: str
+    fix: str
+
+
+class SuggestionsResponse(BaseModel):
+    suggestions: List[SuggestionItem]
+
+
+@router.post("/generate-summary", response_model=SummaryResponse)
+async def generate_summary(request: SummaryRequest):
+    """Generate a professional summary for CV"""
+    try:
+        summary = await ai_service.generate_summary(
+            job_title=request.job_title,
+            experience_years=request.experience_years,
+            skills=request.skills,
+            tone=request.tone
+        )
+        return SummaryResponse(summary=summary)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
+
+
+@router.post("/generate-bullets", response_model=BulletsResponse)
+async def generate_experience_bullets(request: ExperienceRequest):
+    """Generate experience bullet points"""
+    try:
+        bullets = await ai_service.generate_experience_bullets(
+            job_title=request.job_title,
+            company=request.company,
+            responsibilities=request.responsibilities,
+            num_bullets=request.num_bullets
+        )
+        return BulletsResponse(bullets=bullets)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
+
+
+@router.post("/generate-skills", response_model=SkillsResponse)
+async def generate_skills(request: SkillsRequest):
+    """Generate relevant skills for a job title"""
+    try:
+        skills = await ai_service.generate_skills(
+            job_title=request.job_title,
+            category=request.category,
+            num_skills=request.num_skills
+        )
+        return SkillsResponse(skills=skills)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
+
+
+@router.post("/enhance-text", response_model=EnhanceResponse)
+async def enhance_text(request: EnhanceRequest):
+    """Enhance existing text to be more impactful"""
+    try:
+        enhanced = await ai_service.enhance_text(
+            text=request.text,
+            context=request.context
+        )
+        return EnhanceResponse(enhanced_text=enhanced)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
+
+
+@router.post("/generate-education", response_model=EducationResponse)
+async def generate_education(request: EducationRequest):
+    """Generate education section description"""
+    try:
+        description = await ai_service.generate_education_description(
+            degree=request.degree,
+            field=request.field,
+            achievements=request.achievements
+        )
+        return EducationResponse(description=description)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
+
+
+@router.post("/suggest-improvements", response_model=SuggestionsResponse)
+async def suggest_improvements(request: SuggestionsRequest):
+    """Analyze CV and suggest improvements"""
+    try:
+        suggestions = await ai_service.suggest_improvements(request.cv_data)
+        return SuggestionsResponse(
+            suggestions=[SuggestionItem(**s) for s in suggestions if all(k in s for k in ['section', 'issue', 'fix'])]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
