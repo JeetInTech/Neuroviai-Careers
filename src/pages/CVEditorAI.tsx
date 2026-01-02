@@ -816,8 +816,22 @@ export default function CVEditor() {
 
   const renderTemplate = () => {
     if (!cv) return null;
-    // Use OrderedTemplate which respects section order
-    return <OrderedTemplate cv={cv} isViewMode={true} sectionOrder={sectionOrder} templateName={cv.template || cv.target_role || 'professional'} />;
+    
+    // Check if section order has been customized from default
+    const isDefaultOrder = JSON.stringify(sectionOrder) === JSON.stringify([
+      'summary', 'skills', 'experience', 'education', 'projects', 'certifications', 'languages'
+    ]);
+    
+    // If using default order, use the selected template for proper styling
+    // If sections are reordered, use OrderedTemplate with custom order
+    if (isDefaultOrder) {
+      const templateId = cv.template || cv.target_role || 'professional';
+      const TemplateComponent = getTemplateComponent(templateId);
+      return <TemplateComponent cv={cv} isViewMode={true} />;
+    } else {
+      // Use OrderedTemplate when sections are reordered
+      return <OrderedTemplate cv={cv} isViewMode={true} sectionOrder={sectionOrder} templateName={cv.template || cv.target_role || 'professional'} />;
+    }
   };
 
   if (loading) {

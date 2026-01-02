@@ -905,24 +905,75 @@ import { ExecutiveTemplate, CreativeTemplate, FreelancerTemplate, AIMLTemplate }
 // =============================================================================
 
 export const TEMPLATE_COMPONENTS: Record<string, React.FC<TemplateProps>> = {
+  // Professional / Classic
   'professional': ProfessionalTemplate,
   'classic-professional': ProfessionalTemplate,
+  
+  // Tech / Engineering
   'tech-focused': TechFocusedTemplate,
   'software-engineer': TechFocusedTemplate,
+  'mobile-app-developer': TechFocusedTemplate,
+  'qa-engineer': TechFocusedTemplate,
+  'systems-engineer': TechFocusedTemplate,
+  
+  // Entry Level / Fresher
   'fresher': FresherTemplate,
   'entry-level': FresherTemplate,
+  
+  // Data Science / Analytics
   'data-scientist': DataScienceTemplate,
   'data-science': DataScienceTemplate,
+  'data-analyst': DataScienceTemplate,
+  'research-analyst': DataScienceTemplate,
+  
+  // AI/ML
   'ai-ml-engineer': AIMLTemplate,
   'ai-ml': AIMLTemplate,
+  
+  // Minimal
   'minimal': MinimalTemplate,
   'modern-minimal': MinimalTemplate,
+  
+  // Executive / Management
   'executive': ExecutiveTemplate,
+  'product-manager': ExecutiveTemplate,
+  'project-manager': ExecutiveTemplate,
+  'program-manager': ExecutiveTemplate,
+  'operations-manager': ExecutiveTemplate,
+  
+  // Creative
   'creative': CreativeTemplate,
   'creative-bold': CreativeTemplate,
   'designer': CreativeTemplate,
+  'graphic-designer': CreativeTemplate,
+  'video-editor': CreativeTemplate,
+  'content-writer': CreativeTemplate,
+  'social-media-manager': CreativeTemplate,
+  'seo-specialist': CreativeTemplate,
+  
+  // Freelancer / Consultant
   'freelancer': FreelancerTemplate,
   'consultant': FreelancerTemplate,
+  
+  // Business & Finance - use Professional style
+  'financial-analyst': ProfessionalTemplate,
+  'accountant': ProfessionalTemplate,
+  'sales-executive': ProfessionalTemplate,
+  'business-development': ProfessionalTemplate,
+  
+  // Healthcare & Science - use Professional style
+  'healthcare-admin': ProfessionalTemplate,
+  'clinical-research': ProfessionalTemplate,
+  
+  // HR & Admin - use Professional style
+  'hr-manager': ProfessionalTemplate,
+  'legal-assistant': ProfessionalTemplate,
+  'admin-assistant': ProfessionalTemplate,
+  
+  // Emerging Roles - use Tech style
+  'ai-prompt-engineer': TechFocusedTemplate,
+  'automation-specialist': TechFocusedTemplate,
+  'technical-writer': TechFocusedTemplate,
 };
 
 // Default template selector
