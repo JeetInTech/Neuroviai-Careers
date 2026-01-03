@@ -30,6 +30,8 @@ async def create_cv(
         "languages": [l.model_dump() for l in request.languages],
         "certifications": [c.model_dump() for c in request.certifications],
         "projects": [p.model_dump() for p in request.projects],
+        "accent_color": request.accent_color,
+        "is_grayscale": request.is_grayscale or False,
         "created_at": datetime.utcnow().isoformat(),
         "updated_at": datetime.utcnow().isoformat()
     }
@@ -107,6 +109,8 @@ async def update_cv(
         "languages": [l.model_dump() for l in request.languages],
         "certifications": [c.model_dump() for c in request.certifications],
         "projects": [p.model_dump() for p in request.projects],
+        "accent_color": request.accent_color,
+        "is_grayscale": request.is_grayscale or False,
         "updated_at": datetime.utcnow().isoformat()
     }
     

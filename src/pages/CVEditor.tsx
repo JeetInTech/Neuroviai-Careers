@@ -3,13 +3,28 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
 import type { CV, LaTeXExportOptions } from '../lib/database.types';
-import { Download, Share2, Save, ArrowLeft, Eye, Palette } from 'lucide-react';
+import { Download, Share2, Save, ArrowLeft, Eye, Palette, Camera, X, Check } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import ShareCVDialog from '../components/ShareCVDialog';
 import { downloadLaTeX, getRecommendedTemplate } from '../lib/latex-generator';
-import { getTemplateComponent, TEMPLATE_INFO } from '../components/templates';
+import { getTemplateComponent } from '../components/templates';
 import { TemplateDropdown } from '../components/TemplateSelector';
+import ImageCropper from '../components/ImageCropper';
+
+// Predefined color palette for accent colors
+const COLOR_PRESETS = [
+  { name: 'Indigo', value: '#4F46E5' },
+  { name: 'Blue', value: '#2563EB' },
+  { name: 'Teal', value: '#0D9488' },
+  { name: 'Green', value: '#16A34A' },
+  { name: 'Purple', value: '#7C3AED' },
+  { name: 'Pink', value: '#DB2777' },
+  { name: 'Red', value: '#DC2626' },
+  { name: 'Orange', value: '#EA580C' },
+  { name: 'Amber', value: '#D97706' },
+  { name: 'Slate', value: '#475569' },
+];
 
 export default function CVEditor() {
   const { id } = useParams();
@@ -24,6 +39,14 @@ export default function CVEditor() {
   const [isViewMode, setIsViewMode] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const cvRef = useRef<HTMLDivElement>(null);
+  
+  // Photo upload state
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  
+  // Color customization state
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const { template, isTemplate, cvData } = location.state || {};
 
@@ -76,6 +99,56 @@ export default function CVEditor() {
     }
   }, [id, user, isTemplate, cvData, template]);
 
+  // Photo upload handlers
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setTempImageUrl(reader.result as string);
+        setShowImageCropper(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePhotoCropComplete = (croppedBlob: Blob) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (cv) {
+        setCV({
+          ...cv,
+          personal_info: { ...cv.personal_info, photo_url: reader.result as string }
+        });
+      }
+    };
+    reader.readAsDataURL(croppedBlob);
+    setShowImageCropper(false);
+    setTempImageUrl(null);
+  };
+
+  const handleRemovePhoto = () => {
+    if (cv) {
+      setCV({
+        ...cv,
+        personal_info: { ...cv.personal_info, photo_url: undefined }
+      });
+    }
+  };
+
+  // Color customization handlers
+  const handleAccentColorChange = (color: string) => {
+    if (cv) {
+      setCV({ ...cv, accent_color: color, is_grayscale: false });
+    }
+  };
+
+  const handleGrayscaleToggle = () => {
+    if (cv) {
+      setCV({ ...cv, is_grayscale: !cv.is_grayscale });
+    }
+  };
+
   const handleSave = async () => {
     if (!cv || !user) return;
 
@@ -93,6 +166,8 @@ export default function CVEditor() {
         languages: cv.languages,
         certifications: cv.certifications,
         projects: cv.projects || [],
+        accent_color: cv.accent_color,
+        is_grayscale: cv.is_grayscale,
       };
 
       // If this is a new CV from a template
@@ -367,7 +442,8 @@ export default function CVEditor() {
         {/* Template Selector - Show in view mode */}
         {isViewMode && (
           <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              {/* Template Selection */}
               <div className="flex items-center gap-3">
                 <Palette className="h-5 w-5 text-indigo-600" />
                 <span className="text-sm font-medium text-gray-700">Template:</span>
@@ -379,8 +455,81 @@ export default function CVEditor() {
                   />
                 </div>
               </div>
-              <div className="text-sm text-gray-500">
-                {TEMPLATE_INFO.find(t => t.id === (cv.template || 'professional'))?.description}
+              
+              {/* Color Customization */}
+              <div className="flex items-center gap-4">
+                {/* Accent Color Picker */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Color:</span>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowColorPicker(!showColorPicker)}
+                      className="w-8 h-8 rounded-full border-2 border-gray-300 shadow-sm hover:border-indigo-400 transition-colors"
+                      style={{ 
+                        backgroundColor: cv.is_grayscale ? '#6B7280' : (cv.accent_color || '#4F46E5')
+                      }}
+                    />
+                    {showColorPicker && (
+                      <>
+                        {/* Backdrop to close picker */}
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setShowColorPicker(false)}
+                        />
+                        <div className="absolute top-full mt-2 right-0 z-20 bg-white rounded-lg shadow-xl border p-3 min-w-[200px]">
+                          <div className="grid grid-cols-5 gap-2 mb-3">
+                            {COLOR_PRESETS.map((color) => (
+                              <button
+                                key={color.value}
+                                onClick={() => {
+                                  handleAccentColorChange(color.value);
+                                  setShowColorPicker(false);
+                                }}
+                                className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${
+                                  cv.accent_color === color.value && !cv.is_grayscale
+                                    ? 'border-gray-900 ring-2 ring-offset-2 ring-gray-400'
+                                    : 'border-gray-200'
+                                }`}
+                                style={{ backgroundColor: color.value }}
+                                title={color.name}
+                              />
+                            ))}
+                          </div>
+                          <div className="border-t pt-3">
+                            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                              <input
+                                type="color"
+                                value={cv.accent_color || '#4F46E5'}
+                                onChange={(e) => handleAccentColorChange(e.target.value)}
+                                className="w-6 h-6 rounded cursor-pointer"
+                              />
+                              Custom Color
+                            </label>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Black & White Toggle */}
+                <button
+                  onClick={handleGrayscaleToggle}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
+                    cv.is_grayscale
+                      ? 'bg-gray-900 text-white border-gray-900'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  {cv.is_grayscale ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      B&W
+                    </>
+                  ) : (
+                    'B&W'
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -396,6 +545,53 @@ export default function CVEditor() {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
                 <div className="space-y-4">
+                  {/* Profile Photo Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Profile Photo <span className="text-gray-400 text-xs">(Optional)</span>
+                    </label>
+                    <div className="flex items-center gap-4">
+                      {cv.personal_info.photo_url ? (
+                        <div className="relative group">
+                          <img
+                            src={cv.personal_info.photo_url}
+                            alt="Profile"
+                            className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                          />
+                          <button
+                            onClick={handleRemovePhoto}
+                            className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                          <Camera className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="file"
+                          ref={photoInputRef}
+                          onChange={handlePhotoSelect}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <button
+                          onClick={() => photoInputRef.current?.click()}
+                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+                        >
+                          <Camera className="w-4 h-4 mr-1.5" />
+                          {cv.personal_info.photo_url ? 'Change Photo' : 'Upload Photo'}
+                        </button>
+                        <p className="text-xs text-gray-500">
+                          JPG, PNG up to 2MB. Square works best.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
                     <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
                       Full Name
@@ -1005,6 +1201,26 @@ export default function CVEditor() {
               setShowShareDialog(false);
               navigate('/creators');
             }}
+          />
+        )}
+
+        {/* Image Cropper Modal */}
+        {showImageCropper && tempImageUrl && (
+          <ImageCropper
+            imageUrl={tempImageUrl}
+            onCropComplete={handlePhotoCropComplete}
+            onCancel={() => {
+              setShowImageCropper(false);
+              setTempImageUrl(null);
+            }}
+          />
+        )}
+
+        {/* Click outside handler for color picker */}
+        {showColorPicker && (
+          <div 
+            className="fixed inset-0 z-10" 
+            onClick={() => setShowColorPicker(false)}
           />
         )}
       </div>

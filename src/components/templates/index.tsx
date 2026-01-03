@@ -12,9 +12,45 @@
 
 import React from 'react';
 import type { CV } from '../../lib/database.types';
+import { CreativeTemplate } from './additional';
+import {
+  FinancialAnalystTemplate,
+  AccountantTemplate,
+  MobileAppDeveloperTemplate,
+  SystemsEngineerTemplate,
+  SalesExecutiveTemplate,
+  HRManagerTemplate,
+  ProjectManagerTemplate,
+  ProductManagerTemplate,
+  ContentWriterTemplate,
+  SocialMediaManagerTemplate,
+  DataAnalystTemplate,
+  ResearchAnalystTemplate,
+  QAEngineerTemplate,
+  AutomationSpecialistTemplate,
+  AIPromptEngineerTemplate,
+  DesignerTemplate,
+  VideoEditorTemplate,
+  AdminAssistantTemplate,
+  LegalAssistantTemplate,
+  HealthcareAdminTemplate,
+  ClinicalResearchTemplate,
+  BusinessDevelopmentTemplate,
+  ConsultantTemplate,
+  ProgramManagerTemplate,
+  OperationsManagerTemplate,
+  SEOSpecialistTemplate,
+  TechnicalWriterTemplate,
+  FresherTemplate,
+  ExecutiveTemplate,
+  FreelancerTemplate,
+  AIMLTemplate,
+  DataScienceTemplate,
+  CreativeBoldTemplate
+} from './unique_templates';
 
 // =============================================================================
-// SHARED COMPONENTS
+// SHARED COMPONENTS & UTILITIES
 // =============================================================================
 
 export interface TemplateProps {
@@ -22,6 +58,22 @@ export interface TemplateProps {
   isViewMode?: boolean;
   sectionOrder?: string[];
 }
+
+// Color utility to get CSS classes or inline styles based on CV settings
+export const getAccentColor = (cv: CV, defaultColor: string = '#4F46E5'): string => {
+  if (cv.is_grayscale) return '#374151'; // gray-700
+  return cv.accent_color || defaultColor;
+};
+
+// Get grayscale-aware text color classes
+export const getColorClasses = (cv: CV, colorClass: string, grayscaleClass: string = 'text-gray-700'): string => {
+  return cv.is_grayscale ? grayscaleClass : colorClass;
+};
+
+// Get grayscale-aware background color classes
+export const getBgColorClasses = (cv: CV, colorClass: string, grayscaleClass: string = 'bg-gray-100'): string => {
+  return cv.is_grayscale ? grayscaleClass : colorClass;
+};
 
 // Default section order
 const DEFAULT_SECTION_ORDER = ['summary', 'skills', 'experience', 'education', 'projects', 'certifications', 'languages'];
@@ -115,162 +167,191 @@ const formatDateRange = (startDate: string, endDate: string, current?: boolean):
 // Ideal for: Experienced professionals, corporate roles
 // =============================================================================
 
-export const ProfessionalTemplate: React.FC<TemplateProps> = ({ cv }) => (
-  <div className="bg-white shadow-lg rounded-lg p-8 max-w-[8.5in] mx-auto font-sans leading-relaxed">
-    {/* Header */}
-    <header className="text-center mb-6 pb-4 border-b-2 border-gray-800">
-      <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-        {cv.personal_info.full_name}
-      </h1>
-      <ContactBar personal={cv.personal_info} />
-      <SocialLinks personal={cv.personal_info} />
-    </header>
+export const ProfessionalTemplate: React.FC<TemplateProps> = ({ cv }) => {
+  const accentColor = getAccentColor(cv);
+  
+  return (
+    <div className="bg-white shadow-lg rounded-lg p-8 max-w-[8.5in] mx-auto font-sans leading-relaxed">
+      {/* Header */}
+      <header className="text-center mb-6 pb-4 border-b-2" style={{ borderColor: accentColor }}>
+        {/* Profile Photo */}
+        {cv.personal_info.photo_url && (
+          <div className="flex justify-center mb-4">
+            <img
+              src={cv.personal_info.photo_url}
+              alt={cv.personal_info.full_name}
+              className={`w-24 h-24 rounded-full object-cover border-4 ${cv.is_grayscale ? 'grayscale' : ''}`}
+              style={{ borderColor: accentColor }}
+            />
+          </div>
+        )}
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+          {cv.personal_info.full_name}
+        </h1>
+        <ContactBar personal={cv.personal_info} />
+        <SocialLinks personal={cv.personal_info} />
+      </header>
 
-    {/* Professional Summary */}
-    {cv.personal_info.summary && (
-      <section className="mb-6">
-        <SectionHeader title="Professional Summary" />
-        <p className="text-gray-700 text-sm leading-relaxed">{cv.personal_info.summary}</p>
-      </section>
-    )}
+      {/* Professional Summary */}
+      {cv.personal_info.summary && (
+        <section className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 border-b-2 pb-1 mb-4 uppercase tracking-wide" style={{ borderColor: accentColor }}>
+            Professional Summary
+          </h2>
+          <p className="text-gray-700 text-sm leading-relaxed">{cv.personal_info.summary}</p>
+        </section>
+      )}
 
-    {/* Experience */}
-    {cv.experience.length > 0 && (
-      <section className="mb-6">
-        <SectionHeader title="Experience" />
-        <div className="space-y-4">
-          {cv.experience.map((exp, idx) => (
-            <div key={idx} className="pb-3">
-              <div className="flex justify-between items-baseline flex-wrap gap-2">
-                <h3 className="text-base font-semibold text-gray-900">{exp.title}</h3>
-                {formatDateRange(exp.start_date, exp.end_date, exp.current) && (
-                  <span className="text-sm text-gray-600">
-                    {formatDateRange(exp.start_date, exp.end_date, exp.current)}
-                  </span>
+      {/* Experience */}
+      {cv.experience.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 border-b-2 pb-1 mb-4 uppercase tracking-wide" style={{ borderColor: accentColor }}>
+            Experience
+          </h2>
+          <div className="space-y-4">
+            {cv.experience.map((exp, idx) => (
+              <div key={idx} className="pb-3">
+                <div className="flex justify-between items-baseline flex-wrap gap-2">
+                  <h3 className="text-base font-semibold text-gray-900">{exp.title}</h3>
+                  {formatDateRange(exp.start_date, exp.end_date, exp.current) && (
+                    <span className="text-sm" style={{ color: accentColor }}>
+                      {formatDateRange(exp.start_date, exp.end_date, exp.current)}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-700 font-medium">{exp.company}{exp.location ? ` | ${exp.location}` : ''}</p>
+                {exp.achievements && exp.achievements.length > 0 ? (
+                  <ul className="list-disc list-inside mt-2 text-sm text-gray-700 space-y-1">
+                    {exp.achievements.map((achievement, aIdx) => (
+                      <li key={aIdx}>{achievement}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700">{exp.description}</p>
                 )}
               </div>
-              <p className="text-sm text-gray-700 font-medium">{exp.company}{exp.location ? ` | ${exp.location}` : ''}</p>
-              {exp.achievements && exp.achievements.length > 0 ? (
-                <ul className="list-disc list-inside mt-2 text-sm text-gray-700 space-y-1">
-                  {exp.achievements.map((achievement, aIdx) => (
-                    <li key={aIdx}>{achievement}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-2 text-sm text-gray-700">{exp.description}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
+            ))}
+          </div>
+        </section>
+      )}
 
-    {/* Education */}
-    {cv.education.length > 0 && (
-      <section className="mb-6">
-        <SectionHeader title="Education" />
-        <div className="space-y-3">
-          {cv.education.map((edu, idx) => (
-            <div key={idx}>
-              <div className="flex justify-between items-baseline flex-wrap gap-2">
-                <h3 className="text-base font-semibold text-gray-900">
-                  {edu.degree}{edu.field_of_study ? ` in ${edu.field_of_study}` : ''}
-                </h3>
-                {formatDateRange(edu.start_date, edu.end_date) && (
-                  <span className="text-sm text-gray-600">
-                    {formatDateRange(edu.start_date, edu.end_date)}
-                  </span>
+      {/* Education */}
+      {cv.education.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 border-b-2 pb-1 mb-4 uppercase tracking-wide" style={{ borderColor: accentColor }}>
+            Education
+          </h2>
+          <div className="space-y-3">
+            {cv.education.map((edu, idx) => (
+              <div key={idx}>
+                <div className="flex justify-between items-baseline flex-wrap gap-2">
+                  <h3 className="text-base font-semibold text-gray-900">
+                    {edu.degree}{edu.field_of_study ? ` in ${edu.field_of_study}` : ''}
+                  </h3>
+                  {formatDateRange(edu.start_date, edu.end_date) && (
+                    <span className="text-sm" style={{ color: accentColor }}>
+                      {formatDateRange(edu.start_date, edu.end_date)}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-700">{edu.institution}{edu.location ? ` | ${edu.location}` : ''}</p>
+                {edu.gpa && <p className="text-sm text-gray-600 mt-1">GPA: {edu.gpa}</p>}
+                {edu.description && <p className="text-sm text-gray-600 mt-1">{edu.description}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Skills */}
+      {cv.skills.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 border-b-2 pb-1 mb-4 uppercase tracking-wide" style={{ borderColor: accentColor }}>
+            Skills
+          </h2>
+          <div className="space-y-2">
+            {Object.entries(
+              cv.skills.reduce((acc, skill) => {
+                const cat = skill.category || 'Other';
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(skill.name);
+                return acc;
+              }, {} as Record<string, string[]>)
+            ).map(([category, skills], idx) => (
+              <p key={idx} className="text-sm text-gray-700">
+                <span className="font-semibold" style={{ color: accentColor }}>{category}:</span> {skills.join(', ')}
+              </p>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Projects */}
+      {cv.projects && cv.projects.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 border-b-2 pb-1 mb-4 uppercase tracking-wide" style={{ borderColor: accentColor }}>
+            Projects
+          </h2>
+          <div className="space-y-3">
+            {cv.projects.map((project, idx) => (
+              <div key={idx}>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <h3 className="text-base font-semibold text-gray-900">{project.name}</h3>
+                  {project.url && (
+                    <a href={project.url} target="_blank" rel="noopener noreferrer" 
+                       className="text-xs hover:underline" style={{ color: accentColor }}>[Live]</a>
+                  )}
+                  {project.github_url && (
+                    <a href={project.github_url} target="_blank" rel="noopener noreferrer"
+                       className="text-xs hover:underline" style={{ color: accentColor }}>[GitHub]</a>
+                  )}
+                </div>
+                <p className="text-sm text-gray-700 mt-1">{project.description}</p>
+                {project.technologies.length > 0 && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    <span className="font-medium">Tech:</span> {project.technologies.join(', ')}
+                  </p>
                 )}
               </div>
-              <p className="text-sm text-gray-700">{edu.institution}{edu.location ? ` | ${edu.location}` : ''}</p>
-              {edu.gpa && <p className="text-sm text-gray-600 mt-1">GPA: {edu.gpa}</p>}
-              {edu.description && <p className="text-sm text-gray-600 mt-1">{edu.description}</p>}
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
+            ))}
+          </div>
+        </section>
+      )}
 
-    {/* Skills */}
-    {cv.skills.length > 0 && (
-      <section className="mb-6">
-        <SectionHeader title="Skills" />
-        <div className="space-y-2">
-          {Object.entries(
-            cv.skills.reduce((acc, skill) => {
-              const cat = skill.category || 'Other';
-              if (!acc[cat]) acc[cat] = [];
-              acc[cat].push(skill.name);
-              return acc;
-            }, {} as Record<string, string[]>)
-          ).map(([category, skills], idx) => (
-            <p key={idx} className="text-sm text-gray-700">
-              <span className="font-semibold">{category}:</span> {skills.join(', ')}
-            </p>
-          ))}
-        </div>
-      </section>
-    )}
-
-    {/* Projects */}
-    {cv.projects && cv.projects.length > 0 && (
-      <section className="mb-6">
-        <SectionHeader title="Projects" />
-        <div className="space-y-3">
-          {cv.projects.map((project, idx) => (
-            <div key={idx}>
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <h3 className="text-base font-semibold text-gray-900">{project.name}</h3>
-                {project.url && (
-                  <a href={project.url} target="_blank" rel="noopener noreferrer" 
-                     className="text-xs text-indigo-600 hover:underline">[Live]</a>
+      {/* Certifications */}
+      {cv.certifications.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 border-b-2 pb-1 mb-4 uppercase tracking-wide" style={{ borderColor: accentColor }}>
+            Certifications
+          </h2>
+          <ul className="space-y-1">
+            {cv.certifications.map((cert, idx) => (
+              <li key={idx} className="text-sm text-gray-700">
+                <span className="font-medium">{cert.name}</span> – {cert.issuer} ({formatDate(cert.date)})
+                {cert.url && (
+                  <a href={cert.url} target="_blank" rel="noopener noreferrer"
+                     className="ml-2 hover:underline text-xs" style={{ color: accentColor }}>[View]</a>
                 )}
-                {project.github_url && (
-                  <a href={project.github_url} target="_blank" rel="noopener noreferrer"
-                     className="text-xs text-indigo-600 hover:underline">[GitHub]</a>
-                )}
-              </div>
-              <p className="text-sm text-gray-700 mt-1">{project.description}</p>
-              {project.technologies.length > 0 && (
-                <p className="text-sm text-gray-600 mt-1">
-                  <span className="font-medium">Tech:</span> {project.technologies.join(', ')}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-    {/* Certifications */}
-    {cv.certifications.length > 0 && (
-      <section className="mb-6">
-        <SectionHeader title="Certifications" />
-        <ul className="space-y-1">
-          {cv.certifications.map((cert, idx) => (
-            <li key={idx} className="text-sm text-gray-700">
-              <span className="font-medium">{cert.name}</span> – {cert.issuer} ({formatDate(cert.date)})
-              {cert.url && (
-                <a href={cert.url} target="_blank" rel="noopener noreferrer"
-                   className="ml-2 text-indigo-600 hover:underline text-xs">[View]</a>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
-    )}
-
-    {/* Languages */}
-    {cv.languages.length > 0 && (
-      <section>
-        <SectionHeader title="Languages" />
-        <p className="text-sm text-gray-700">
-          {cv.languages.map(lang => `${lang.name} (${lang.proficiency})`).join(', ')}
-        </p>
-      </section>
-    )}
-  </div>
-);
+      {/* Languages */}
+      {cv.languages.length > 0 && (
+        <section>
+          <h2 className="text-lg font-bold text-gray-900 border-b-2 pb-1 mb-4 uppercase tracking-wide" style={{ borderColor: accentColor }}>
+            Languages
+          </h2>
+          <p className="text-sm text-gray-700">
+            {cv.languages.map(lang => `${lang.name} (${lang.proficiency})`).join(', ')}
+          </p>
+        </section>
+      )}
+    </div>
+  );
+};
 
 // =============================================================================
 // TECH-FOCUSED TEMPLATE
@@ -278,475 +359,183 @@ export const ProfessionalTemplate: React.FC<TemplateProps> = ({ cv }) => (
 // Matches: SoftwareEngineerFull preview style
 // =============================================================================
 
-export const TechFocusedTemplate: React.FC<TemplateProps> = ({ cv }) => (
-  <div className="bg-white shadow-lg rounded-lg p-6 md:p-8 max-w-[8.5in] mx-auto font-sans leading-relaxed">
-    {/* Header with border-bottom accent */}
-    <header className="border-b-2 border-indigo-500 pb-4 mb-5">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{cv.personal_info.full_name}</h1>
-      <p className="text-indigo-600 font-medium">
-        {cv.target_role || cv.experience[0]?.title || 'Software Engineer'}
-      </p>
-      <div className="flex flex-wrap gap-3 text-gray-500 text-sm mt-2">
-        {cv.personal_info.email && <span>📧 {cv.personal_info.email}</span>}
-        {cv.personal_info.phone && <span>📱 {cv.personal_info.phone}</span>}
-        {cv.personal_info.github_url && (
-          <a href={cv.personal_info.github_url} className="text-indigo-600 hover:underline">🔗 GitHub</a>
-        )}
-        {cv.personal_info.linkedin_url && (
-          <a href={cv.personal_info.linkedin_url} className="text-indigo-600 hover:underline">💼 LinkedIn</a>
-        )}
-        {(cv.personal_info.city || cv.personal_info.address) && (
-          <span>📍 {cv.personal_info.city || cv.personal_info.address}</span>
-        )}
-      </div>
-    </header>
-
-    {/* Summary */}
-    {cv.personal_info.summary && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-indigo-600 mb-2 uppercase tracking-wide">Summary</h2>
-        <p className="text-gray-700 text-sm leading-relaxed">{cv.personal_info.summary}</p>
-      </section>
-    )}
-
-    {/* Technical Skills */}
-    {cv.skills.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-indigo-600 mb-2 uppercase tracking-wide">Technical Skills</h2>
-        <div className="flex flex-wrap gap-2 items-start">
-          {cv.skills.map((skill, idx) => (
-            <span key={idx} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium border border-indigo-200 whitespace-nowrap">
-              {skill.name}
-            </span>
-          ))}
-        </div>
-      </section>
-    )}
-
-    {/* Experience */}
-    {cv.experience.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-indigo-600 mb-2 uppercase tracking-wide">Experience</h2>
-        <div className="space-y-4">
-          {cv.experience.map((exp, idx) => (
-            <div key={idx} className="border-l-2 border-indigo-200 pl-4">
-              <div className="flex justify-between items-start flex-wrap gap-1">
-                <div>
-                  <h3 className="font-semibold text-gray-800 text-sm">{exp.title}</h3>
-                  <p className="text-indigo-600 text-xs">{exp.company}</p>
-                </div>
-                {formatDateRange(exp.start_date, exp.end_date, exp.current) && (
-                  <span className="text-gray-500 text-xs">
-                    {formatDateRange(exp.start_date, exp.end_date, exp.current)}
-                  </span>
-                )}
-              </div>
-              {exp.achievements && exp.achievements.length > 0 ? (
-                <ul className="mt-1 text-gray-600 text-xs space-y-0.5 list-disc list-inside">
-                  {exp.achievements.map((achievement, aIdx) => (
-                    <li key={aIdx}>{achievement}</li>
-                  ))}
-                </ul>
-              ) : exp.description && (
-                <p className="mt-1 text-gray-600 text-xs">{exp.description}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
-
-    {/* Education */}
-    {cv.education.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-indigo-600 mb-2 uppercase tracking-wide">Education</h2>
-        <div className="space-y-2">
-          {cv.education.map((edu, idx) => (
-            <div key={idx} className="flex justify-between flex-wrap gap-1">
-              <div>
-                <h3 className="font-semibold text-gray-800 text-sm">
-                  {edu.degree}{edu.field_of_study ? ` in ${edu.field_of_study}` : ''}
-                </h3>
-                <p className="text-gray-600 text-xs">{edu.institution}</p>
-              </div>
-              {formatDateRange(edu.start_date, edu.end_date) && (
-                <span className="text-gray-500 text-xs">
-                  {formatDateRange(edu.start_date, edu.end_date)}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
-
-    {/* Projects */}
-    {cv.projects && cv.projects.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-indigo-600 mb-2 uppercase tracking-wide">Projects</h2>
-        <div className="space-y-2">
-          {cv.projects.map((project, idx) => (
-            <div key={idx} className="bg-indigo-50/50 p-2 rounded border-l-2 border-indigo-400">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-semibold text-gray-800 text-sm">{project.name}</h3>
-                {project.github_url && (
-                  <a href={project.github_url} target="_blank" rel="noopener noreferrer"
-                     className="text-xs text-indigo-600 hover:underline">[GitHub]</a>
-                )}
-                {project.url && (
-                  <a href={project.url} target="_blank" rel="noopener noreferrer"
-                     className="text-xs text-indigo-600 hover:underline">[Live]</a>
-                )}
-              </div>
-              <p className="text-gray-600 text-xs mt-0.5">{project.description}</p>
-              {project.technologies.length > 0 && (
-                <p className="text-indigo-600 text-xs mt-0.5">{project.technologies.join(' • ')}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
-
-    {/* Languages */}
-    {cv.languages.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-indigo-600 mb-2 uppercase tracking-wide">Languages</h2>
-        <div className="flex gap-4 text-xs text-gray-600">
-          {cv.languages.map((lang, idx) => (
-            <span key={idx}>• {lang.name} ({lang.proficiency})</span>
-          ))}
-        </div>
-      </section>
-    )}
-
-    {/* Certifications */}
-    {cv.certifications.length > 0 && (
-      <section>
-        <h2 className="text-sm md:text-base font-bold text-indigo-600 mb-2 uppercase tracking-wide">Certifications</h2>
-        <ul className="text-gray-600 text-xs space-y-1 list-disc list-inside">
-          {cv.certifications.map((cert, idx) => (
-            <li key={idx}>{cert.name} - {cert.issuer}</li>
-          ))}
-        </ul>
-      </section>
-    )}
-  </div>
-);
-
-// =============================================================================
-// FRESHER / ENTRY-LEVEL TEMPLATE  
-// Ideal for: Students, Recent graduates, Career changers
-// Matches: FresherFull preview style (centered header, highlighted education box)
-// =============================================================================
-
-export const FresherTemplate: React.FC<TemplateProps> = ({ cv }) => (
-  <div className="bg-white shadow-lg rounded-lg p-6 md:p-8 max-w-[8.5in] mx-auto font-sans leading-relaxed">
-    {/* Header */}
-    <header className="text-center mb-6">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{cv.personal_info.full_name}</h1>
-      <p className="text-cyan-600 font-medium">
-        {cv.target_role || 'Seeking Entry-Level Position'}
-      </p>
-      <div className="flex justify-center flex-wrap gap-4 text-gray-500 text-xs mt-2">
-        {cv.personal_info.email && <span>📧 {cv.personal_info.email}</span>}
-        {cv.personal_info.phone && <span>📱 {cv.personal_info.phone}</span>}
-        {cv.personal_info.github_url && (
-          <a href={cv.personal_info.github_url} className="text-cyan-600 hover:underline">🔗 GitHub</a>
-        )}
-        {cv.personal_info.linkedin_url && (
-          <a href={cv.personal_info.linkedin_url} className="text-cyan-600 hover:underline">💼 LinkedIn</a>
-        )}
-        {(cv.personal_info.city || cv.personal_info.address) && (
-          <span>📍 {cv.personal_info.city || cv.personal_info.address}</span>
-        )}
-      </div>
-    </header>
-
-    {/* Education - Highlighted for Fresher */}
-    {cv.education.length > 0 && (
-      <section className="bg-cyan-50 rounded-lg p-4 mb-5 border border-cyan-200">
-        <h2 className="text-sm md:text-base font-bold text-cyan-700 mb-2 uppercase tracking-wide">🎓 Education</h2>
-        {cv.education.map((edu, idx) => (
-          <div key={idx} className="mb-2 last:mb-0">
-            <div className="flex justify-between flex-wrap gap-1">
-              <div>
-                <h3 className="font-semibold text-gray-800 text-sm">
-                  {edu.degree}{edu.field_of_study ? ` in ${edu.field_of_study}` : ''}
-                </h3>
-                <p className="text-cyan-600 text-xs">{edu.institution}</p>
-              </div>
-              {formatDateRange(edu.start_date, edu.end_date) && (
-                <span className="text-gray-500 text-xs">
-                  {formatDateRange(edu.start_date, edu.end_date)}
-                </span>
-              )}
-            </div>
-            <ul className="mt-1 text-gray-600 text-xs space-y-0.5 list-disc list-inside">
-              {edu.gpa && <li>GPA: {edu.gpa}</li>}
-              {edu.achievements?.map((a, aIdx) => <li key={aIdx}>{a}</li>)}
-            </ul>
+export const TechFocusedTemplate: React.FC<TemplateProps> = ({ cv }) => {
+  const accentColor = getAccentColor(cv);
+  const bgTint = cv.is_grayscale ? 'bg-gray-50' : 'bg-indigo-50';
+  const borderTint = cv.is_grayscale ? 'border-gray-200' : 'border-indigo-200';
+  
+  return (
+    <div className={`bg-white shadow-lg rounded-lg p-6 md:p-8 max-w-[8.5in] mx-auto font-sans leading-relaxed ${cv.is_grayscale ? 'grayscale' : ''}`}>
+      {/* Header with border-bottom accent */}
+      <header className="border-b-2 pb-4 mb-5" style={{ borderColor: accentColor }}>
+        <div className="flex items-start gap-4">
+          {cv.personal_info.photo_url && (
+            <img
+              src={cv.personal_info.photo_url}
+              alt={cv.personal_info.full_name}
+              className="w-16 h-16 rounded-lg object-cover border-2"
+              style={{ borderColor: accentColor }}
+            />
+          )}
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{cv.personal_info.full_name}</h1>
+            <p className="font-medium" style={{ color: accentColor }}>
+              {cv.target_role || cv.experience[0]?.title || 'Software Engineer'}
+            </p>
           </div>
-        ))}
-      </section>
-    )}
-
-    {/* Summary */}
-    {cv.personal_info.summary && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-cyan-600 mb-2 uppercase tracking-wide">Summary</h2>
-        <p className="text-gray-700 text-xs md:text-sm">{cv.personal_info.summary}</p>
-      </section>
-    )}
-
-    {/* Skills */}
-    {cv.skills.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-cyan-600 mb-2 uppercase tracking-wide">Skills</h2>
-        <div className="flex flex-wrap gap-2 items-start">
-          {cv.skills.map((skill, idx) => (
-            <span key={idx} className="px-3 py-1.5 bg-cyan-50 text-cyan-600 rounded-full text-xs font-medium border border-cyan-200 whitespace-nowrap">
-              {skill.name}
-            </span>
-          ))}
         </div>
-      </section>
-    )}
-
-    {/* Internship/Experience */}
-    {cv.experience.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-cyan-600 mb-2 uppercase tracking-wide">Experience</h2>
-        <div className="space-y-3">
-          {cv.experience.map((exp, idx) => (
-            <div key={idx}>
-              <div className="flex justify-between items-start flex-wrap gap-1">
-                <div>
-                  <h3 className="font-semibold text-gray-800 text-sm">{exp.title}</h3>
-                  <p className="text-cyan-600 text-xs">{exp.company}</p>
-                </div>
-                {formatDateRange(exp.start_date, exp.end_date, exp.current) && (
-                  <span className="text-gray-500 text-xs">
-                    {formatDateRange(exp.start_date, exp.end_date, exp.current)}
-                  </span>
-                )}
-              </div>
-              {exp.achievements && exp.achievements.length > 0 ? (
-                <ul className="mt-1 text-gray-600 text-xs space-y-0.5 list-disc list-inside">
-                  {exp.achievements.map((achievement, aIdx) => (
-                    <li key={aIdx}>{achievement}</li>
-                  ))}
-                </ul>
-              ) : exp.description && (
-                <p className="mt-1 text-gray-600 text-xs">{exp.description}</p>
-              )}
-            </div>
-          ))}
+        <div className="flex flex-wrap gap-3 text-gray-500 text-sm mt-2">
+          {cv.personal_info.email && <span>📧 {cv.personal_info.email}</span>}
+          {cv.personal_info.phone && <span>📱 {cv.personal_info.phone}</span>}
+          {cv.personal_info.github_url && (
+            <a href={cv.personal_info.github_url} className="hover:underline" style={{ color: accentColor }}>🔗 GitHub</a>
+          )}
+          {cv.personal_info.linkedin_url && (
+            <a href={cv.personal_info.linkedin_url} className="hover:underline" style={{ color: accentColor }}>💼 LinkedIn</a>
+          )}
+          {(cv.personal_info.city || cv.personal_info.address) && (
+            <span>📍 {cv.personal_info.city || cv.personal_info.address}</span>
+          )}
         </div>
-      </section>
-    )}
+      </header>
 
-    {/* Projects */}
-    {cv.projects && cv.projects.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-cyan-600 mb-2 uppercase tracking-wide">Projects</h2>
-        <div className="space-y-2">
-          {cv.projects.map((project, idx) => (
-            <div key={idx} className="bg-cyan-50/50 p-2 rounded border-l-2 border-cyan-400">
-              <h3 className="font-semibold text-gray-800 text-sm">{project.name}</h3>
-              {project.technologies.length > 0 && (
-                <p className="text-cyan-600 text-xs">{project.technologies.join(' • ')}</p>
-              )}
-              <p className="text-gray-600 text-xs mt-0.5">{project.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
+      {/* Summary */}
+      {cv.personal_info.summary && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Summary</h2>
+          <p className="text-gray-700 text-sm leading-relaxed">{cv.personal_info.summary}</p>
+        </section>
+      )}
 
-    {/* Languages */}
-    {cv.languages.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-cyan-600 mb-2 uppercase tracking-wide">Languages</h2>
-        <div className="flex gap-4 text-xs text-gray-600">
-          {cv.languages.map((lang, idx) => (
-            <span key={idx}>• {lang.name} ({lang.proficiency})</span>
-          ))}
-        </div>
-      </section>
-    )}
+      {/* Technical Skills */}
+      {cv.skills.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Technical Skills</h2>
+          <div className="flex flex-wrap gap-2 items-start">
+            {cv.skills.map((skill, idx) => (
+              <span 
+                key={idx} 
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap ${bgTint} ${borderTint}`}
+                style={{ color: accentColor }}
+              >
+                {skill.name}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
 
-    {/* Certifications */}
-    {cv.certifications.length > 0 && (
-      <section>
-        <h2 className="text-sm md:text-base font-bold text-cyan-600 mb-2 uppercase tracking-wide">Certifications</h2>
-        <ul className="text-gray-600 text-xs space-y-1 list-disc list-inside">
-          {cv.certifications.map((cert, idx) => (
-            <li key={idx}>{cert.name} - {cert.issuer}</li>
-          ))}
-        </ul>
-      </section>
-    )}
-  </div>
-);
-
-// =============================================================================
-// DATA SCIENCE / ML TEMPLATE
-// Ideal for: Data Scientists, ML Engineers, Data Analysts
-// Matches: DataScientistFull preview style (purple border-left accent, skill bars)
-// =============================================================================
-
-export const DataScienceTemplate: React.FC<TemplateProps> = ({ cv }) => (
-  <div className="bg-white shadow-lg rounded-lg p-6 md:p-8 max-w-[8.5in] mx-auto font-sans leading-relaxed">
-    {/* Header with accent */}
-    <header className="border-l-4 border-purple-500 pl-4 mb-6">
-      <h1 className="text-xl md:text-2xl font-bold text-gray-800">{cv.personal_info.full_name}</h1>
-      <p className="text-purple-600 font-medium">
-        {cv.target_role || cv.experience[0]?.title || 'Data Scientist'}
-      </p>
-      <div className="flex flex-wrap gap-3 text-gray-500 text-xs mt-2">
-        {cv.personal_info.email && <span>📧 {cv.personal_info.email}</span>}
-        {cv.personal_info.phone && <span>📱 {cv.personal_info.phone}</span>}
-        {cv.personal_info.github_url && (
-          <a href={cv.personal_info.github_url} className="text-purple-600 hover:underline">🔗 GitHub</a>
-        )}
-        {cv.personal_info.linkedin_url && (
-          <a href={cv.personal_info.linkedin_url} className="text-purple-600 hover:underline">💼 LinkedIn</a>
-        )}
-        {(cv.personal_info.city || cv.personal_info.address) && (
-          <span>📍 {cv.personal_info.city || cv.personal_info.address}</span>
-        )}
-      </div>
-    </header>
-
-    {/* Summary */}
-    {cv.personal_info.summary && (
-      <section className="bg-purple-50 rounded-lg p-4 mb-5">
-        <p className="text-gray-700 text-xs md:text-sm">{cv.personal_info.summary}</p>
-      </section>
-    )}
-
-    {/* Tools & Proficiency */}
-    {cv.skills.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-purple-600 mb-3 uppercase tracking-wide">Tools & Technologies</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {cv.skills.slice(0, 8).map((skill, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <span className="text-xs text-gray-600 w-24 truncate">{skill.name}</span>
-              <div className="flex-1 bg-purple-100 rounded-full h-2">
-                <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${Math.min((skill.level || 4) * 20, 100)}%` }}></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
-
-    {/* Experience */}
-    {cv.experience.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-purple-600 mb-2 uppercase tracking-wide">Experience</h2>
-        <div className="space-y-3">
-          {cv.experience.map((exp, idx) => (
-            <div key={idx}>
-              <div className="flex justify-between items-start flex-wrap gap-1">
-                <div>
-                  <h3 className="font-semibold text-gray-800 text-sm">{exp.title}</h3>
-                  <p className="text-purple-600 text-xs">{exp.company}</p>
-                </div>
-                {formatDateRange(exp.start_date, exp.end_date, exp.current) && (
-                  <span className="text-gray-500 text-xs">
-                    {formatDateRange(exp.start_date, exp.end_date, exp.current)}
-                  </span>
-                )}
-              </div>
-              {exp.achievements && exp.achievements.length > 0 ? (
-                <ul className="mt-1 text-gray-600 text-xs space-y-0.5 list-disc list-inside">
-                  {exp.achievements.map((achievement, aIdx) => (
-                    <li key={aIdx}>{achievement}</li>
-                  ))}
-                </ul>
-              ) : exp.description && (
-                <p className="mt-1 text-gray-600 text-xs">{exp.description}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
-
-    {/* Projects */}
-    {cv.projects && cv.projects.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-purple-600 mb-2 uppercase tracking-wide">Projects</h2>
-        <div className="space-y-2">
-          {cv.projects.map((project, idx) => (
-            <div key={idx} className="border-l-2 border-purple-300 pl-3">
-              <h3 className="font-semibold text-gray-800 text-sm">{project.name}</h3>
-              <p className="text-gray-600 text-xs mt-0.5">{project.description}</p>
-              {project.technologies.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {project.technologies.map((tech, tIdx) => (
-                    <span key={tIdx} className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded">
-                      {tech}
+      {/* Experience */}
+      {cv.experience.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Experience</h2>
+          <div className="space-y-4">
+            {cv.experience.map((exp, idx) => (
+              <div key={idx} className={`border-l-2 pl-4 ${borderTint}`}>
+                <div className="flex justify-between items-start flex-wrap gap-1">
+                  <div>
+                    <h3 className="font-semibold text-gray-800 text-sm">{exp.title}</h3>
+                    <p className="text-xs" style={{ color: accentColor }}>{exp.company}</p>
+                  </div>
+                  {formatDateRange(exp.start_date, exp.end_date, exp.current) && (
+                    <span className="text-gray-500 text-xs">
+                      {formatDateRange(exp.start_date, exp.end_date, exp.current)}
                     </span>
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
-
-    {/* Education */}
-    {cv.education.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-purple-600 mb-2 uppercase tracking-wide">Education</h2>
-        <div className="space-y-2">
-          {cv.education.map((edu, idx) => (
-            <div key={idx} className="flex justify-between flex-wrap gap-1">
-              <div>
-                <h3 className="font-semibold text-gray-800 text-sm">
-                  {edu.degree}{edu.field_of_study ? `, ${edu.field_of_study}` : ''}
-                </h3>
-                <p className="text-gray-600 text-xs">{edu.institution}</p>
+                {exp.achievements && exp.achievements.length > 0 ? (
+                  <ul className="mt-1 text-gray-600 text-xs space-y-0.5 list-disc list-inside">
+                    {exp.achievements.map((achievement, aIdx) => (
+                      <li key={aIdx}>{achievement}</li>
+                    ))}
+                  </ul>
+                ) : exp.description && (
+                  <p className="mt-1 text-gray-600 text-xs">{exp.description}</p>
+                )}
               </div>
-              {formatDateRange(edu.start_date, edu.end_date) && (
-                <span className="text-gray-500 text-xs">{formatDateRange(edu.start_date, edu.end_date)}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
+            ))}
+          </div>
+        </section>
+      )}
 
-    {/* Languages */}
-    {cv.languages.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-purple-600 mb-2 uppercase tracking-wide">Languages</h2>
-        <div className="flex gap-4 text-xs text-gray-600">
-          {cv.languages.map((lang, idx) => (
-            <span key={idx}>• {lang.name} ({lang.proficiency})</span>
-          ))}
-        </div>
-      </section>
-    )}
+      {/* Education */}
+      {cv.education.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Education</h2>
+          <div className="space-y-2">
+            {cv.education.map((edu, idx) => (
+              <div key={idx} className="flex justify-between flex-wrap gap-1">
+                <div>
+                  <h3 className="font-semibold text-gray-800 text-sm">
+                    {edu.degree}{edu.field_of_study ? ` in ${edu.field_of_study}` : ''}
+                  </h3>
+                  <p className="text-gray-600 text-xs">{edu.institution}</p>
+                </div>
+                {formatDateRange(edu.start_date, edu.end_date) && (
+                  <span className="text-gray-500 text-xs">
+                    {formatDateRange(edu.start_date, edu.end_date)}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-    {/* Certifications */}
-    {cv.certifications.length > 0 && (
-      <section>
-        <h2 className="text-sm md:text-base font-bold text-purple-600 mb-2 uppercase tracking-wide">Certifications</h2>
-        <ul className="text-gray-600 text-xs space-y-1 list-disc list-inside">
-          {cv.certifications.map((cert, idx) => (
-            <li key={idx}>{cert.name} - {cert.issuer}</li>
-          ))}
-        </ul>
-      </section>
-    )}
-  </div>
-);
+      {/* Projects */}
+      {cv.projects && cv.projects.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Projects</h2>
+          <div className="space-y-2">
+            {cv.projects.map((project, idx) => (
+              <div key={idx} className={`${bgTint}/50 p-2 rounded border-l-2`} style={{ borderColor: accentColor }}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-semibold text-gray-800 text-sm">{project.name}</h3>
+                  {project.github_url && (
+                    <a href={project.github_url} target="_blank" rel="noopener noreferrer"
+                       className="text-xs hover:underline" style={{ color: accentColor }}>[GitHub]</a>
+                  )}
+                  {project.url && (
+                    <a href={project.url} target="_blank" rel="noopener noreferrer"
+                       className="text-xs hover:underline" style={{ color: accentColor }}>[Live]</a>
+                  )}
+                </div>
+                <p className="text-gray-600 text-xs mt-0.5">{project.description}</p>
+                {project.technologies.length > 0 && (
+                  <p className="text-xs mt-0.5" style={{ color: accentColor }}>{project.technologies.join(' • ')}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Languages */}
+      {cv.languages.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Languages</h2>
+          <div className="flex gap-4 text-xs text-gray-600">
+            {cv.languages.map((lang, idx) => (
+              <span key={idx}>• {lang.name} ({lang.proficiency})</span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Certifications */}
+      {cv.certifications.length > 0 && (
+        <section>
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Certifications</h2>
+          <ul className="text-gray-600 text-xs space-y-1 list-disc list-inside">
+            {cv.certifications.map((cert, idx) => (
+              <li key={idx}>{cert.name} - {cert.issuer}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+};
 
 // =============================================================================
 // MINIMAL MODERN TEMPLATE (Product Manager style)
@@ -754,111 +543,130 @@ export const DataScienceTemplate: React.FC<TemplateProps> = ({ cv }) => (
 // Matches: ProductManagerFull preview style (centered header, metrics boxes)
 // =============================================================================
 
-export const MinimalTemplate: React.FC<TemplateProps> = ({ cv }) => (
-  <div className="bg-white shadow rounded p-6 md:p-8 max-w-[8.5in] mx-auto font-sans text-gray-800 leading-relaxed">
-    {/* Header */}
-    <header className="text-center border-b-2 border-orange-200 pb-4 mb-5">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{cv.personal_info.full_name}</h1>
-      <p className="text-orange-600 font-medium">
-        {cv.target_role || cv.experience[0]?.title || 'Professional'}
-      </p>
-      <div className="flex justify-center flex-wrap gap-4 text-gray-500 text-xs mt-2">
-        {cv.personal_info.email && <span>📧 {cv.personal_info.email}</span>}
-        {cv.personal_info.phone && <span>📱 {cv.personal_info.phone}</span>}
-        {cv.personal_info.linkedin_url && (
-          <a href={cv.personal_info.linkedin_url} className="text-orange-600 hover:underline">🔗 LinkedIn</a>
+export const MinimalTemplate: React.FC<TemplateProps> = ({ cv }) => {
+  const accentColor = getAccentColor(cv, '#EA580C'); // Default orange
+  const bgTint = cv.is_grayscale ? 'bg-gray-50' : 'bg-orange-50';
+  const borderTint = cv.is_grayscale ? 'border-gray-200' : 'border-orange-200';
+  
+  return (
+    <div className={`bg-white shadow rounded p-6 md:p-8 max-w-[8.5in] mx-auto font-sans text-gray-800 leading-relaxed ${cv.is_grayscale ? 'grayscale' : ''}`}>
+      {/* Header */}
+      <header className="text-center border-b-2 pb-4 mb-5" style={{ borderColor: cv.is_grayscale ? '#E5E7EB' : accentColor + '40' }}>
+        {cv.personal_info.photo_url && (
+          <div className="flex justify-center mb-3">
+            <img
+              src={cv.personal_info.photo_url}
+              alt={cv.personal_info.full_name}
+              className="w-20 h-20 rounded-full object-cover border-4"
+              style={{ borderColor: accentColor }}
+            />
+          </div>
         )}
-        {(cv.personal_info.city || cv.personal_info.address) && (
-          <span>📍 {cv.personal_info.city || cv.personal_info.address}</span>
-        )}
-      </div>
-    </header>
-
-    {/* Summary */}
-    {cv.personal_info.summary && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-orange-600 mb-2 uppercase tracking-wide">Summary</h2>
-        <p className="text-gray-700 text-xs md:text-sm">{cv.personal_info.summary}</p>
-      </section>
-    )}
-
-    {/* Skills */}
-    {cv.skills.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-orange-600 mb-2 uppercase tracking-wide">Skills</h2>
-        <div className="flex flex-wrap gap-2 items-start">
-          {cv.skills.map((skill, idx) => (
-            <span key={idx} className="px-3 py-1.5 bg-orange-50 text-orange-600 rounded-full text-xs font-medium border border-orange-200 whitespace-nowrap">
-              {skill.name}
-            </span>
-          ))}
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{cv.personal_info.full_name}</h1>
+        <p className="font-medium" style={{ color: accentColor }}>
+          {cv.target_role || cv.experience[0]?.title || 'Professional'}
+        </p>
+        <div className="flex justify-center flex-wrap gap-4 text-gray-500 text-xs mt-2">
+          {cv.personal_info.email && <span>📧 {cv.personal_info.email}</span>}
+          {cv.personal_info.phone && <span>📱 {cv.personal_info.phone}</span>}
+          {cv.personal_info.linkedin_url && (
+            <a href={cv.personal_info.linkedin_url} className="hover:underline" style={{ color: accentColor }}>🔗 LinkedIn</a>
+          )}
+          {(cv.personal_info.city || cv.personal_info.address) && (
+            <span>📍 {cv.personal_info.city || cv.personal_info.address}</span>
+          )}
         </div>
-      </section>
-    )}
+      </header>
 
-    {/* Experience */}
-    {cv.experience.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-orange-600 mb-2 uppercase tracking-wide">Experience</h2>
-        <div className="space-y-3">
-          {cv.experience.map((exp, idx) => (
-            <div key={idx}>
-              <div className="flex justify-between items-start flex-wrap gap-1">
-                <div>
-                  <h3 className="font-semibold text-gray-800 text-sm">{exp.title}</h3>
-                  <p className="text-orange-600 text-xs">{exp.company}</p>
+      {/* Summary */}
+      {cv.personal_info.summary && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Summary</h2>
+          <p className="text-gray-700 text-xs md:text-sm">{cv.personal_info.summary}</p>
+        </section>
+      )}
+
+      {/* Skills */}
+      {cv.skills.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Skills</h2>
+          <div className="flex flex-wrap gap-2 items-start">
+            {cv.skills.map((skill, idx) => (
+              <span 
+                key={idx} 
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap ${bgTint} ${borderTint}`}
+                style={{ color: accentColor }}
+              >
+                {skill.name}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Experience */}
+      {cv.experience.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Experience</h2>
+          <div className="space-y-3">
+            {cv.experience.map((exp, idx) => (
+              <div key={idx}>
+                <div className="flex justify-between items-start flex-wrap gap-1">
+                  <div>
+                    <h3 className="font-semibold text-gray-800 text-sm">{exp.title}</h3>
+                    <p className="text-xs" style={{ color: accentColor }}>{exp.company}</p>
+                  </div>
+                  {formatDateRange(exp.start_date, exp.end_date, exp.current) && (
+                    <span className="text-gray-500 text-xs">
+                      {formatDateRange(exp.start_date, exp.end_date, exp.current)}
+                    </span>
+                  )}
                 </div>
-                {formatDateRange(exp.start_date, exp.end_date, exp.current) && (
+                {exp.achievements && exp.achievements.length > 0 ? (
+                  <ul className="mt-1 text-gray-600 text-xs space-y-0.5 list-disc list-inside">
+                    {exp.achievements.map((achievement, aIdx) => (
+                      <li key={aIdx}>{achievement}</li>
+                    ))}
+                  </ul>
+                ) : exp.description && (
+                  <p className="mt-1 text-gray-600 text-xs">{exp.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Education */}
+      {cv.education.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Education</h2>
+          <div className="space-y-2">
+            {cv.education.map((edu, idx) => (
+              <div key={idx} className="flex justify-between flex-wrap gap-1">
+                <div>
+                  <h3 className="font-semibold text-gray-800 text-sm">
+                    {edu.degree}{edu.field_of_study ? ` in ${edu.field_of_study}` : ''}
+                  </h3>
+                  <p className="text-gray-600 text-xs">{edu.institution}</p>
+                </div>
+                {formatDateRange(edu.start_date, edu.end_date) && (
                   <span className="text-gray-500 text-xs">
-                    {formatDateRange(exp.start_date, exp.end_date, exp.current)}
+                    {formatDateRange(edu.start_date, edu.end_date)}
                   </span>
                 )}
               </div>
-              {exp.achievements && exp.achievements.length > 0 ? (
-                <ul className="mt-1 text-gray-600 text-xs space-y-0.5 list-disc list-inside">
-                  {exp.achievements.map((achievement, aIdx) => (
-                    <li key={aIdx}>{achievement}</li>
-                  ))}
-                </ul>
-              ) : exp.description && (
-                <p className="mt-1 text-gray-600 text-xs">{exp.description}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
+            ))}
+          </div>
+        </section>
+      )}
 
-    {/* Education */}
-    {cv.education.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-orange-600 mb-2 uppercase tracking-wide">Education</h2>
-        <div className="space-y-2">
-          {cv.education.map((edu, idx) => (
-            <div key={idx} className="flex justify-between flex-wrap gap-1">
-              <div>
-                <h3 className="font-semibold text-gray-800 text-sm">
-                  {edu.degree}{edu.field_of_study ? ` in ${edu.field_of_study}` : ''}
-                </h3>
-                <p className="text-gray-600 text-xs">{edu.institution}</p>
-              </div>
-              {formatDateRange(edu.start_date, edu.end_date) && (
-                <span className="text-gray-500 text-xs">
-                  {formatDateRange(edu.start_date, edu.end_date)}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
-
-    {/* Projects */}
-    {cv.projects && cv.projects.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-orange-600 mb-2 uppercase tracking-wide">Projects</h2>
-        <div className="space-y-2">
-          {cv.projects.map((project, idx) => (
+      {/* Projects */}
+      {cv.projects && cv.projects.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Projects</h2>
+          <div className="space-y-2">
+            {cv.projects.map((project, idx) => (
             <div key={idx}>
               <span className="text-sm font-medium text-gray-900">{project.name}</span>
               <span className="text-sm text-gray-500"> – {project.description}</span>
@@ -868,37 +676,32 @@ export const MinimalTemplate: React.FC<TemplateProps> = ({ cv }) => (
       </section>
     )}
 
-    {/* Languages */}
-    {cv.languages.length > 0 && (
-      <section className="mb-5">
-        <h2 className="text-sm md:text-base font-bold text-orange-600 mb-2 uppercase tracking-wide">Languages</h2>
-        <div className="flex gap-4 text-xs text-gray-600">
-          {cv.languages.map((lang, idx) => (
-            <span key={idx}>• {lang.name} ({lang.proficiency})</span>
-          ))}
-        </div>
-      </section>
-    )}
+      {/* Languages */}
+      {cv.languages.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Languages</h2>
+          <div className="flex gap-4 text-xs text-gray-600">
+            {cv.languages.map((lang, idx) => (
+              <span key={idx}>• {lang.name} ({lang.proficiency})</span>
+            ))}
+          </div>
+        </section>
+      )}
 
-    {/* Certifications */}
-    {cv.certifications.length > 0 && (
-      <section>
-        <h2 className="text-sm md:text-base font-bold text-orange-600 mb-2 uppercase tracking-wide">Certifications</h2>
-        <ul className="text-gray-600 text-xs space-y-1 list-disc list-inside">
-          {cv.certifications.map((cert, idx) => (
-            <li key={idx}>{cert.name} - {cert.issuer}</li>
-          ))}
-        </ul>
-      </section>
-    )}
-  </div>
-);
-
-// =============================================================================
-// IMPORT ADDITIONAL TEMPLATES
-// =============================================================================
-
-import { ExecutiveTemplate, CreativeTemplate, FreelancerTemplate, AIMLTemplate } from './additional';
+      {/* Certifications */}
+      {cv.certifications.length > 0 && (
+        <section>
+          <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Certifications</h2>
+          <ul className="text-gray-600 text-xs space-y-1 list-disc list-inside">
+            {cv.certifications.map((cert, idx) => (
+              <li key={idx}>{cert.name} - {cert.issuer}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+};
 
 // =============================================================================
 // TEMPLATE REGISTRY
@@ -912,9 +715,9 @@ export const TEMPLATE_COMPONENTS: Record<string, React.FC<TemplateProps>> = {
   // Tech / Engineering
   'tech-focused': TechFocusedTemplate,
   'software-engineer': TechFocusedTemplate,
-  'mobile-app-developer': TechFocusedTemplate,
-  'qa-engineer': TechFocusedTemplate,
-  'systems-engineer': TechFocusedTemplate,
+  'mobile-app-developer': MobileAppDeveloperTemplate,
+  'qa-engineer': QAEngineerTemplate,
+  'systems-engineer': SystemsEngineerTemplate,
   
   // Entry Level / Fresher
   'fresher': FresherTemplate,
@@ -923,8 +726,8 @@ export const TEMPLATE_COMPONENTS: Record<string, React.FC<TemplateProps>> = {
   // Data Science / Analytics
   'data-scientist': DataScienceTemplate,
   'data-science': DataScienceTemplate,
-  'data-analyst': DataScienceTemplate,
-  'research-analyst': DataScienceTemplate,
+  'data-analyst': DataAnalystTemplate,
+  'research-analyst': ResearchAnalystTemplate,
   
   // AI/ML
   'ai-ml-engineer': AIMLTemplate,
@@ -936,44 +739,44 @@ export const TEMPLATE_COMPONENTS: Record<string, React.FC<TemplateProps>> = {
   
   // Executive / Management
   'executive': ExecutiveTemplate,
-  'product-manager': ExecutiveTemplate,
-  'project-manager': ExecutiveTemplate,
-  'program-manager': ExecutiveTemplate,
-  'operations-manager': ExecutiveTemplate,
+  'product-manager': ProductManagerTemplate,
+  'project-manager': ProjectManagerTemplate,
+  'program-manager': ProgramManagerTemplate,
+  'operations-manager': OperationsManagerTemplate,
   
   // Creative
   'creative': CreativeTemplate,
-  'creative-bold': CreativeTemplate,
-  'designer': CreativeTemplate,
-  'graphic-designer': CreativeTemplate,
-  'video-editor': CreativeTemplate,
-  'content-writer': CreativeTemplate,
-  'social-media-manager': CreativeTemplate,
-  'seo-specialist': CreativeTemplate,
+  'creative-bold': CreativeBoldTemplate,
+  'designer': DesignerTemplate,
+  'graphic-designer': DesignerTemplate,
+  'video-editor': VideoEditorTemplate,
+  'content-writer': ContentWriterTemplate,
+  'social-media-manager': SocialMediaManagerTemplate,
+  'seo-specialist': SEOSpecialistTemplate,
   
   // Freelancer / Consultant
   'freelancer': FreelancerTemplate,
-  'consultant': FreelancerTemplate,
+  'consultant': ConsultantTemplate,
   
-  // Business & Finance - use Professional style
-  'financial-analyst': ProfessionalTemplate,
-  'accountant': ProfessionalTemplate,
-  'sales-executive': ProfessionalTemplate,
-  'business-development': ProfessionalTemplate,
+  // Business & Finance
+  'financial-analyst': FinancialAnalystTemplate,
+  'accountant': AccountantTemplate,
+  'sales-executive': SalesExecutiveTemplate,
+  'business-development': BusinessDevelopmentTemplate,
   
-  // Healthcare & Science - use Professional style
-  'healthcare-admin': ProfessionalTemplate,
-  'clinical-research': ProfessionalTemplate,
+  // Healthcare & Science
+  'healthcare-admin': HealthcareAdminTemplate,
+  'clinical-research': ClinicalResearchTemplate,
   
-  // HR & Admin - use Professional style
-  'hr-manager': ProfessionalTemplate,
-  'legal-assistant': ProfessionalTemplate,
-  'admin-assistant': ProfessionalTemplate,
+  // HR & Admin
+  'hr-manager': HRManagerTemplate,
+  'legal-assistant': LegalAssistantTemplate,
+  'admin-assistant': AdminAssistantTemplate,
   
-  // Emerging Roles - use Tech style
-  'ai-prompt-engineer': TechFocusedTemplate,
-  'automation-specialist': TechFocusedTemplate,
-  'technical-writer': TechFocusedTemplate,
+  // Emerging Roles
+  'ai-prompt-engineer': AIPromptEngineerTemplate,
+  'automation-specialist': AutomationSpecialistTemplate,
+  'technical-writer': TechnicalWriterTemplate,
 };
 
 // Default template selector
@@ -1467,8 +1270,8 @@ export const TEMPLATE_INFO = [
   },
 ];
 
-// Re-export templates from additional file
-export { ExecutiveTemplate, CreativeTemplate, FreelancerTemplate, AIMLTemplate } from './additional';
+// Re-export CreativeTemplate from additional file (others are from unique_templates)
+export { CreativeTemplate } from './additional';
 
 export default {
   getTemplateComponent,

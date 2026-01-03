@@ -181,6 +181,9 @@ export type CV = {
   certifications: Certification[];
   projects?: Project[];
   custom_sections?: CustomSection[];
+  // Color customization
+  accent_color?: string; // Hex color code
+  is_grayscale?: boolean; // Black & white mode
   created_at: string;
   updated_at: string;
 };

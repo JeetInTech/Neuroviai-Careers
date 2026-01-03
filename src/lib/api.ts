@@ -100,6 +100,8 @@ interface CV {
   languages: Language[];
   certifications: Certification[];
   projects: Project[];
+  accent_color?: string;
+  is_grayscale?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -114,6 +116,8 @@ interface CVCreateData {
   languages?: Language[];
   certifications?: Certification[];
   projects?: Project[];
+  accent_color?: string;
+  is_grayscale?: boolean;
 }
 
 // Legacy CVData for ATS analysis

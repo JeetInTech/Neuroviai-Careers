@@ -9,7 +9,8 @@ import {
   Sparkles, Wand2, Plus, ChevronDown, ChevronRight,
   Loader2, Lightbulb, X, User, Briefcase, 
   GraduationCap, Code, Languages, Award, Trash2, Upload,
-  PanelRightClose, PanelRight, GripVertical, ChevronUp, Settings2
+  PanelRightClose, PanelRight, GripVertical, ChevronUp, Settings2,
+  Check
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -235,6 +236,23 @@ export default function CVEditor() {
   // AI Suggestions
   const [suggestions, setSuggestions] = useState<Array<{section: string; issue: string; fix: string}>>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  
+  // Color customization state
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  
+  // Predefined color palette for accent colors
+  const COLOR_PRESETS = [
+    { name: 'Indigo', value: '#4F46E5' },
+    { name: 'Blue', value: '#2563EB' },
+    { name: 'Teal', value: '#0D9488' },
+    { name: 'Green', value: '#16A34A' },
+    { name: 'Purple', value: '#7C3AED' },
+    { name: 'Pink', value: '#DB2777' },
+    { name: 'Red', value: '#DC2626' },
+    { name: 'Orange', value: '#EA580C' },
+    { name: 'Amber', value: '#D97706' },
+    { name: 'Slate', value: '#475569' },
+  ];
 
   const { template, isTemplate, cvData } = location.state || {};
 
@@ -421,17 +439,17 @@ export default function CVEditor() {
     }
   };
 
-  // Handle uploaded PDF data - merge with existing CV
-  const handleUploadedData = (data: {
+  // Handle uploaded PDF data - merge with existing CV and auto-save
+  const handleUploadedData = async (data: {
     personal_info: Record<string, unknown>;
     experience: Array<Record<string, unknown>>;
     education: Array<Record<string, unknown>>;
     skills: Array<Record<string, unknown>>;
     projects: Array<Record<string, unknown>>;
   }) => {
-    if (!cv) return;
+    if (!cv || !user) return;
 
-    setCV({
+    const updatedCV = {
       ...cv,
       personal_info: {
         ...cv.personal_info,
@@ -479,9 +497,46 @@ export default function CVEditor() {
         github_url: (proj.github_url as string) || '',
         highlights: (proj.highlights as string[]) || [],
       })) : cv.projects || [],
-    });
+    };
     
+    setCV(updatedCV);
     setShowUploadModal(false);
+    
+    // Auto-save the uploaded data
+    try {
+      setSaving(true);
+      const cvPayload = {
+        template: updatedCV.template,
+        target_role: updatedCV.target_role,
+        personal_info: updatedCV.personal_info,
+        education: updatedCV.education,
+        experience: updatedCV.experience,
+        skills: updatedCV.skills,
+        languages: updatedCV.languages,
+        certifications: updatedCV.certifications,
+        projects: updatedCV.projects || [],
+        accent_color: updatedCV.accent_color,
+        is_grayscale: updatedCV.is_grayscale,
+      };
+
+      if (isTemplate || !updatedCV.id) {
+        const result = await api.createCV(cvPayload);
+        if (result.success && result.cv) {
+          setCV(result.cv as unknown as CV);
+          navigate(`/cv/edit/${result.cv.id}`, { replace: true });
+        }
+      } else {
+        const result = await api.updateCV(updatedCV.id, cvPayload);
+        if (result.success && result.cv) {
+          setCV(result.cv as unknown as CV);
+        }
+      }
+    } catch (error) {
+      console.error('Error auto-saving uploaded data:', error);
+      setError('Data imported but failed to save. Please save manually.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Section order manipulation functions
@@ -535,6 +590,8 @@ export default function CVEditor() {
         languages: cv.languages,
         certifications: cv.certifications,
         projects: cv.projects || [],
+        accent_color: cv.accent_color,
+        is_grayscale: cv.is_grayscale,
       };
 
       if (isTemplate || !cv.id) {
@@ -811,6 +868,19 @@ export default function CVEditor() {
   const handleTemplateChange = (newTemplate: string) => {
     if (cv) {
       setCV({ ...cv, template: newTemplate });
+    }
+  };
+
+  // Color customization handlers
+  const handleAccentColorChange = (color: string) => {
+    if (cv) {
+      setCV({ ...cv, accent_color: color, is_grayscale: false });
+    }
+  };
+
+  const handleGrayscaleToggle = () => {
+    if (cv) {
+      setCV({ ...cv, is_grayscale: !cv.is_grayscale });
     }
   };
 
@@ -1654,6 +1724,73 @@ export default function CVEditor() {
                     targetRole={cv.target_role}
                   />
                 </div>
+                
+                {/* Accent Color Picker */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowColorPicker(!showColorPicker)}
+                    className="w-8 h-8 rounded-full border-2 border-gray-300 shadow-sm hover:border-violet-400 transition-colors"
+                    style={{ 
+                      backgroundColor: cv.is_grayscale ? '#6B7280' : (cv.accent_color || '#4F46E5')
+                    }}
+                    title="Change accent color"
+                  />
+                  {showColorPicker && (
+                    <>
+                      {/* Backdrop to close picker */}
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowColorPicker(false)}
+                      />
+                      <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-xl shadow-xl border p-3 min-w-[200px]">
+                        <div className="grid grid-cols-5 gap-2 mb-3">
+                          {COLOR_PRESETS.map((color) => (
+                            <button
+                              key={color.value}
+                              onClick={() => {
+                                handleAccentColorChange(color.value);
+                                setShowColorPicker(false);
+                              }}
+                              className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${
+                                cv.accent_color === color.value && !cv.is_grayscale
+                                  ? 'border-gray-900 ring-2 ring-offset-1 ring-gray-400'
+                                  : 'border-gray-200'
+                              }`}
+                              style={{ backgroundColor: color.value }}
+                              title={color.name}
+                            />
+                          ))}
+                        </div>
+                        <div className="border-t pt-3">
+                          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                            <input
+                              type="color"
+                              value={cv.accent_color || '#4F46E5'}
+                              onChange={(e) => handleAccentColorChange(e.target.value)}
+                              className="w-6 h-6 rounded cursor-pointer"
+                            />
+                            Custom Color
+                          </label>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Black & White Toggle */}
+                <button
+                  onClick={handleGrayscaleToggle}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                    cv.is_grayscale
+                      ? 'bg-gray-900 text-white border-gray-900'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+                  }`}
+                  title="Toggle black & white mode"
+                >
+                  {cv.is_grayscale && <Check className="w-3 h-3" />}
+                  B&W
+                </button>
+                
                 {/* Section Order Button */}
                 <button
                   onClick={() => setShowSectionOrderPanel(!showSectionOrderPanel)}

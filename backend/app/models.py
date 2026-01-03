@@ -122,6 +122,8 @@ class CVCreateRequest(BaseModel):
     languages: List[Language] = []
     certifications: List[Certification] = []
     projects: List[Project] = []
+    accent_color: Optional[str] = None
+    is_grayscale: Optional[bool] = False
 
 class CVResponse(BaseModel):
     id: str
@@ -136,6 +138,8 @@ class CVResponse(BaseModel):
     languages: List[dict]
     certifications: List[dict]
     projects: List[dict]
+    accent_color: Optional[str] = None
+    is_grayscale: Optional[bool] = False
     created_at: str
     updated_at: str
 
