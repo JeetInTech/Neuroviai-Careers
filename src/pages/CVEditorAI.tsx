@@ -1735,46 +1735,6 @@ export default function CVEditor() {
                     }}
                     title="Change accent color"
                   />
-                  {showColorPicker && (
-                    <>
-                      {/* Backdrop to close picker */}
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setShowColorPicker(false)}
-                      />
-                      <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-xl shadow-xl border p-3 min-w-[200px]">
-                        <div className="grid grid-cols-5 gap-2 mb-3">
-                          {COLOR_PRESETS.map((color) => (
-                            <button
-                              key={color.value}
-                              onClick={() => {
-                                handleAccentColorChange(color.value);
-                                setShowColorPicker(false);
-                              }}
-                              className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${
-                                cv.accent_color === color.value && !cv.is_grayscale
-                                  ? 'border-gray-900 ring-2 ring-offset-1 ring-gray-400'
-                                  : 'border-gray-200'
-                              }`}
-                              style={{ backgroundColor: color.value }}
-                              title={color.name}
-                            />
-                          ))}
-                        </div>
-                        <div className="border-t pt-3">
-                          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                            <input
-                              type="color"
-                              value={cv.accent_color || '#4F46E5'}
-                              onChange={(e) => handleAccentColorChange(e.target.value)}
-                              className="w-6 h-6 rounded cursor-pointer"
-                            />
-                            Custom Color
-                          </label>
-                        </div>
-                      </div>
-                    </>
-                  )}
                 </div>
 
                 {/* Black & White Toggle */}
@@ -1856,6 +1816,46 @@ export default function CVEditor() {
           />
         )}
       </div>
+
+      {/* Color Picker Panel - Fixed position portal */}
+      {showColorPicker && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/10 z-[9998]" 
+            onClick={() => setShowColorPicker(false)}
+          />
+          <div className="fixed top-24 right-6 z-[9999] bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 w-16">
+            <p className="text-[10px] font-medium text-gray-500 mb-3 text-center">Colors</p>
+            <div className="flex flex-col gap-2 items-center">
+              {COLOR_PRESETS.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => {
+                    handleAccentColorChange(color.value);
+                    setShowColorPicker(false);
+                  }}
+                  className={`w-9 h-9 rounded-full border-2 transition-all hover:scale-110 ${
+                    cv.accent_color === color.value && !cv.is_grayscale
+                      ? 'border-gray-900 ring-2 ring-offset-1 ring-violet-400'
+                      : 'border-gray-200 hover:border-gray-400'
+                  }`}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                />
+              ))}
+              <div className="border-t border-gray-200 pt-3 mt-2 w-full">
+                <input
+                  type="color"
+                  value={cv.accent_color || '#4F46E5'}
+                  onChange={(e) => handleAccentColorChange(e.target.value)}
+                  className="w-9 h-9 rounded-full cursor-pointer mx-auto block border-0"
+                  title="Custom color"
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
