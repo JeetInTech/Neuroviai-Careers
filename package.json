@@ -1,8 +1,8 @@
 {
-  "name": "cv-forge",
+  "name": "neurovia-career",
   "private": true,
   "version": "1.0.0",
-  "description": "AI-powered ATS-optimized resume builder with LaTeX export",
+  "description": "Neurovia Career - AI-powered ATS-optimized resume builder with LaTeX export",
   "type": "module",
   "scripts": {
     "dev": "vite",

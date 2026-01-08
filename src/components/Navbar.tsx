@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Home, Menu, X, FileText, User, Sparkles } from 'lucide-react';
+import { Home, Menu, X, User, Sparkles } from 'lucide-react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,8 +32,8 @@ export default function Navbar() {
           {/* Logo & Desktop Navigation */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <FileText className="h-8 w-8 text-indigo-600" />
-              <span className="text-xl font-bold text-gray-900">CV Forge</span>
+              <img src="/logo.png" alt="Neurovia Career" className="h-8 w-8" />
+              <span className="text-xl font-bold text-gray-900">Neurovia Career</span>
             </Link>
             <div className="hidden sm:ml-8 sm:flex sm:space-x-2">
               <NavLink to="/" icon={Home}>Home</NavLink>
