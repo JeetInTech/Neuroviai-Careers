@@ -1,11 +1,14 @@
 from fastapi import APIRouter, HTTPException, status, Header, UploadFile, File
-from typing import Optional
+from fastapi.responses import Response
+from typing import Optional, List
+from pydantic import BaseModel
 import re
 import io
 import pdfplumber
 from docx import Document
 from ..routers.profile import get_current_user
 from ..services.ai_service import ai_service
+from ..database import get_supabase_admin
 import logging
 import json
 
@@ -678,7 +681,7 @@ async def parse_document(
     authorization: str = Header(...)
 ):
     """Parse a document (PDF or DOCX) and extract CV data"""
-    user = await get_current_user(authorization)
+    user = get_current_user(authorization)
     
     # Validate file type
     filename = file.filename.lower() if file.filename else ""
@@ -900,3 +903,201 @@ def merge_cv_data(rule_based: dict, ai_parsed: dict) -> dict:
         merged['languages'] = ai_parsed['languages']
     
     return merged
+
+
+# ============================================
+# PDF GENERATION MODELS
+# ============================================
+
+class PdfPersonalInfo(BaseModel):
+    full_name: str = ""
+    email: str = ""
+    phone: str = ""
+    address: str = ""
+    city: str = ""
+    country: str = ""
+    summary: str = ""
+    linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None
+    portfolio_url: Optional[str] = None
+    photo_url: Optional[str] = None
+    
+    class Config:
+        extra = "ignore"
+
+
+class PdfExperience(BaseModel):
+    title: str = ""
+    company: str = ""
+    location: str = ""
+    start_date: str = ""
+    end_date: str = ""
+    current: bool = False
+    description: str = ""
+    achievements: List[str] = []
+    keywords: List[str] = []
+    
+    class Config:
+        extra = "ignore"
+
+
+class PdfEducation(BaseModel):
+    degree: str = ""
+    field_of_study: str = ""
+    institution: str = ""
+    location: str = ""
+    start_date: str = ""
+    end_date: str = ""
+    gpa: str = ""
+    description: str = ""
+    achievements: List[str] = []
+    
+    class Config:
+        extra = "ignore"
+
+
+class PdfSkill(BaseModel):
+    name: str = ""
+    level: int = 3
+    category: str = ""
+    
+    class Config:
+        extra = "ignore"
+
+
+class PdfProject(BaseModel):
+    name: str = ""
+    description: str = ""
+    technologies: List[str] = []
+    url: str = ""
+    github_url: str = ""
+    highlights: List[str] = []
+    
+    class Config:
+        extra = "ignore"
+
+
+class PdfCertification(BaseModel):
+    name: str = ""
+    issuer: str = ""
+    date: str = ""
+    url: str = ""
+    
+    class Config:
+        extra = "ignore"
+
+
+class PdfLanguage(BaseModel):
+    name: str = ""
+    proficiency: str = ""
+    
+    class Config:
+        extra = "ignore"
+
+
+class CVPdfRequest(BaseModel):
+    template: Optional[str] = "professional"
+    target_role: Optional[str] = None
+    personal_info: PdfPersonalInfo
+    experience: List[PdfExperience] = []
+    education: List[PdfEducation] = []
+    skills: List[PdfSkill] = []
+    projects: List[PdfProject] = []
+    certifications: List[PdfCertification] = []
+    languages: List[PdfLanguage] = []
+    accent_color: Optional[str] = "#4F46E5"
+    is_grayscale: Optional[bool] = False
+    
+    class Config:
+        extra = "ignore"  # Ignore any extra fields from frontend
+
+
+@router.post("/export-pdf")
+async def generate_cv_pdf(
+    request: CVPdfRequest,
+    authorization: str = Header(...)
+):
+    """Generate PDF from CV data with selectable text"""
+    try:
+        # Verify user is authenticated
+        user = get_current_user(authorization)
+        
+        # Import PDF service
+        from ..services.pdf_service import generate_pdf
+        
+        # Convert to dict for PDF generation
+        cv_data = {
+            "template": request.template,
+            "personal_info": request.personal_info.model_dump(),
+            "experience": [e.model_dump() for e in request.experience],
+            "education": [e.model_dump() for e in request.education],
+            "skills": [s.model_dump() for s in request.skills],
+            "projects": [p.model_dump() for p in request.projects],
+            "certifications": [c.model_dump() for c in request.certifications],
+            "languages": [l.model_dump() for l in request.languages],
+            "accent_color": request.accent_color,
+            "is_grayscale": request.is_grayscale
+        }
+        
+        # Generate PDF
+        pdf_bytes = generate_pdf(cv_data)
+        
+        # Return PDF as response
+        filename = f"{request.personal_info.full_name or 'cv'}_resume.pdf"
+        filename = filename.replace(" ", "_")
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"PDF generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
+
+
+@router.post("/export-pdf/{cv_id}")
+async def generate_pdf_from_saved_cv(
+    cv_id: str,
+    authorization: str = Header(...)
+):
+    """Generate PDF from a saved CV by ID"""
+    try:
+        user = get_current_user(authorization)
+        supabase = get_supabase_admin()
+        
+        # Import PDF service
+        from ..services.pdf_service import generate_pdf
+        
+        # Fetch the CV
+        result = supabase.table("cvs").select("*").eq("id", cv_id).eq("user_id", user.id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="CV not found")
+        
+        cv_data = result.data[0]
+        
+        # Generate PDF
+        pdf_bytes = generate_pdf(cv_data)
+        
+        # Get filename from personal info
+        personal_info = cv_data.get("personal_info", {})
+        filename = f"{personal_info.get('full_name', 'cv')}_resume.pdf"
+        filename = filename.replace(" ", "_")
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"PDF generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")

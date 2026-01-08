@@ -227,3 +227,27 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-300;
 }
+
+/* ============================================
+   PDF EXPORT STYLES
+   ============================================ */
+
+/* Ensure crisp text rendering for PDF export */
+.cv-export-container,
+.cv-export-container * {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Force exact colors in PDF */
+.cv-export-container {
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+/* Ensure links are visible and clickable */
+.cv-export-container a {
+  text-decoration: underline;
+  cursor: pointer;
+}

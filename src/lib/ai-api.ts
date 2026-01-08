@@ -3,7 +3,21 @@
  * Handles all AI generation requests using Groq API
  */
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+/**
+ * Get authorization header if user is logged in
+ */
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('access_token');
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 interface SummaryRequest {
   job_title: string;
@@ -40,7 +54,7 @@ export const aiApi = {
   async generateSummary(request: SummaryRequest): Promise<string> {
     const response = await fetch(`${API_BASE}/ai/generate-summary`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(request),
     });
     
@@ -55,7 +69,7 @@ export const aiApi = {
   async generateExperienceBullets(request: ExperienceRequest): Promise<string[]> {
     const response = await fetch(`${API_BASE}/ai/generate-bullets`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(request),
     });
     
@@ -70,7 +84,7 @@ export const aiApi = {
   async generateSkills(request: SkillsRequest): Promise<string[]> {
     const response = await fetch(`${API_BASE}/ai/generate-skills`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(request),
     });
     
@@ -85,7 +99,7 @@ export const aiApi = {
   async enhanceText(request: EnhanceRequest): Promise<string> {
     const response = await fetch(`${API_BASE}/ai/enhance-text`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(request),
     });
     
@@ -100,7 +114,7 @@ export const aiApi = {
   async generateEducation(request: EducationRequest): Promise<string> {
     const response = await fetch(`${API_BASE}/ai/generate-education`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(request),
     });
     
@@ -119,7 +133,7 @@ export const aiApi = {
   }>> {
     const response = await fetch(`${API_BASE}/ai/suggest-improvements`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ cv_data: cvData }),
     });
     
@@ -129,6 +143,41 @@ export const aiApi = {
     
     const data = await response.json();
     return data.suggestions;
+  },
+
+  /**
+   * AI Resume Tailoring - Optimizes resume to match a specific job description
+   */
+  async tailorResumeToJob(
+    cvData: Record<string, unknown>,
+    jobDescription: string,
+    jobTitle?: string
+  ): Promise<{
+    tailored_cv: Record<string, unknown>;
+    match_score: number;
+    job_analysis: {
+      required_skills: string[];
+      ats_keywords: string[];
+      key_responsibilities: string[];
+    };
+    optimizations_made: string[];
+  }> {
+    const response = await fetch(`${API_BASE}/ai/tailor-resume`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        cv_data: cvData,
+        job_description: jobDescription,
+        job_title: jobTitle,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to tailor resume');
+    }
+    
+    return response.json();
   },
 };
 

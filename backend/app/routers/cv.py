@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Header
+from fastapi import APIRouter, HTTPException, status, Header, Depends
 from typing import List, Optional
 from ..models import CVCreateRequest, CVResponse
 from ..database import get_supabase_admin
@@ -14,7 +14,7 @@ async def create_cv(
     authorization: str = Header(...)
 ):
     """Create a new CV"""
-    user = await get_current_user(authorization)
+    user = get_current_user(authorization)
     supabase = get_supabase_admin()  # Use admin to bypass RLS
     
     # Create CV with the same schema as frontend
@@ -43,7 +43,7 @@ async def create_cv(
 @router.get("/list")
 async def list_my_cvs(authorization: str = Header(...)):
     """List all CVs for current user"""
-    user = await get_current_user(authorization)
+    user = get_current_user(authorization)
     supabase = get_supabase_admin()  # Use admin to bypass RLS
     
     cvs = supabase.table("cvs").select("*").eq("user_id", user.id).order("updated_at", desc=True).execute()
@@ -53,7 +53,7 @@ async def list_my_cvs(authorization: str = Header(...)):
 @router.get("/{cv_id}")
 async def get_cv(cv_id: str, authorization: str = Header(...)):
     """Get a specific CV"""
-    user = await get_current_user(authorization)
+    user = get_current_user(authorization)
     supabase = get_supabase_admin()  # Use admin to bypass RLS
     
     cv = supabase.table("cvs").select("*").eq("id", cv_id).maybe_single().execute()
@@ -80,7 +80,7 @@ async def update_cv(
     authorization: str = Header(...)
 ):
     """Update a CV"""
-    user = await get_current_user(authorization)
+    user = get_current_user(authorization)
     supabase = get_supabase_admin()  # Use admin to bypass RLS
     
     # Check ownership
@@ -121,7 +121,7 @@ async def update_cv(
 @router.delete("/{cv_id}")
 async def delete_cv(cv_id: str, authorization: str = Header(...)):
     """Delete a CV"""
-    user = await get_current_user(authorization)
+    user = get_current_user(authorization)
     supabase = get_supabase_admin()  # Use admin to bypass RLS
     
     # Check ownership
@@ -146,7 +146,7 @@ async def delete_cv(cv_id: str, authorization: str = Header(...)):
 @router.post("/{cv_id}/publish")
 async def publish_cv(cv_id: str, authorization: str = Header(...)):
     """Make a CV public"""
-    user = await get_current_user(authorization)
+    user = get_current_user(authorization)
     supabase = get_supabase_admin()  # Use admin to bypass RLS
     
     # Check ownership
@@ -165,7 +165,7 @@ async def publish_cv(cv_id: str, authorization: str = Header(...)):
 @router.post("/{cv_id}/unpublish")
 async def unpublish_cv(cv_id: str, authorization: str = Header(...)):
     """Make a CV private"""
-    user = await get_current_user(authorization)
+    user = get_current_user(authorization)
     supabase = get_supabase_admin()  # Use admin to bypass RLS
     
     existing = supabase.table("cvs").select("user_id").eq("id", cv_id).maybe_single().execute()

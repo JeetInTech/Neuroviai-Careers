@@ -393,6 +393,42 @@ class ApiClient {
       body: JSON.stringify({ linkedin_url: linkedinUrl }),
     });
   }
+
+  // PDF Export endpoint
+  async exportPDF(cvData: CVCreateData): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}/document/export-pdf`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.accessToken && { 'Authorization': `Bearer ${this.accessToken}` }),
+      },
+      body: JSON.stringify(cvData),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to generate PDF');
+    }
+    
+    return response.blob();
+  }
+
+  // PDF Export by CV ID
+  async exportPDFById(cvId: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}/document/export-pdf/${cvId}`, {
+      method: 'POST',
+      headers: {
+        ...(this.accessToken && { 'Authorization': `Bearer ${this.accessToken}` }),
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to generate PDF');
+    }
+    
+    return response.blob();
+  }
 }
 
 export const api = new ApiClient(API_URL);

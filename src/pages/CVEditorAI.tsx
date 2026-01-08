@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
@@ -12,8 +12,6 @@ import {
   PanelRightClose, PanelRight, GripVertical, ChevronUp, Settings2,
   Check
 } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import ShareCVDialog from '../components/ShareCVDialog';
 import DocumentUpload from '../components/DocumentUpload';
 import { downloadLaTeX, getRecommendedTemplate } from '../lib/latex-generator';
@@ -240,6 +238,12 @@ export default function CVEditor() {
   // Color customization state
   const [showColorPicker, setShowColorPicker] = useState(false);
   
+  // Auto-save state
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousCvRef = useRef<string | null>(null);
+  
   // Predefined color palette for accent colors
   const COLOR_PRESETS = [
     { name: 'Indigo', value: '#4F46E5' },
@@ -267,6 +271,11 @@ export default function CVEditor() {
           email: '',
           phone: '',
           address: '',
+          city: '',
+          country: '',
+          linkedin_url: '',
+          github_url: '',
+          portfolio_url: '',
           summary: '',
           ...cvData.personal_info
         },
@@ -275,6 +284,9 @@ export default function CVEditor() {
         skills: cvData.skills || [],
         languages: cvData.languages || [],
         certifications: cvData.certifications || [],
+        projects: cvData.projects || [],
+        accent_color: cvData.accent_color || '#4F46E5',
+        is_grayscale: cvData.is_grayscale || false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -289,7 +301,33 @@ export default function CVEditor() {
         try {
           const data = await api.getCV(id);
           if (!data) throw new Error('CV not found');
-          setCV(data as unknown as CV);
+          // Ensure all fields have proper defaults by spreading defaults first, then data
+          const loadedCV = {
+            ...data,
+            personal_info: {
+              // Defaults first
+              full_name: data.personal_info?.full_name || '',
+              email: data.personal_info?.email || '',
+              phone: data.personal_info?.phone || '',
+              address: data.personal_info?.address || '',
+              city: data.personal_info?.city || '',
+              country: data.personal_info?.country || '',
+              linkedin_url: data.personal_info?.linkedin_url || '',
+              github_url: data.personal_info?.github_url || '',
+              portfolio_url: data.personal_info?.portfolio_url || '',
+              summary: data.personal_info?.summary || '',
+              photo_url: data.personal_info?.photo_url || '',
+            },
+            education: data.education || [],
+            experience: data.experience || [],
+            skills: data.skills || [],
+            languages: data.languages || [],
+            certifications: data.certifications || [],
+            projects: data.projects || [],
+            accent_color: data.accent_color || '#4F46E5',
+            is_grayscale: data.is_grayscale || false,
+          };
+          setCV(loadedCV as unknown as CV);
         } catch (error) {
           console.error('Error loading CV:', error);
           setError('Failed to load CV');
@@ -300,6 +338,104 @@ export default function CVEditor() {
       loadCV();
     }
   }, [id, user, isTemplate, cvData, template]);
+
+  // Auto-save function
+  const performAutoSave = useCallback(async () => {
+    if (!cv || !user || !cv.id) return;
+    
+    try {
+      setAutoSaveStatus('saving');
+      
+      const cvPayload = {
+        template: cv.template,
+        target_role: cv.target_role,
+        personal_info: cv.personal_info,
+        education: cv.education,
+        experience: cv.experience,
+        skills: cv.skills,
+        languages: cv.languages,
+        certifications: cv.certifications,
+        projects: cv.projects || [],
+        accent_color: cv.accent_color,
+        is_grayscale: cv.is_grayscale,
+      };
+
+      await api.updateCV(cv.id, cvPayload);
+      setLastSaved(new Date());
+      setAutoSaveStatus('saved');
+      
+      // Reset status after 2 seconds
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+      setAutoSaveStatus('error');
+    }
+  }, [cv, user]);
+
+  // Auto-save effect - triggers 1.5 seconds after last change
+  useEffect(() => {
+    // Always clear previous timeout on every render to prevent memory leaks
+    const currentTimeout = autoSaveTimeoutRef.current;
+    
+    if (!cv || !cv.id || loading) {
+      return () => {
+        if (currentTimeout) {
+          clearTimeout(currentTimeout);
+        }
+      };
+    }
+    
+    // Serialize CV to compare changes
+    const cvString = JSON.stringify({
+      personal_info: cv.personal_info,
+      education: cv.education,
+      experience: cv.experience,
+      skills: cv.skills,
+      languages: cv.languages,
+      certifications: cv.certifications,
+      projects: cv.projects,
+      accent_color: cv.accent_color,
+      is_grayscale: cv.is_grayscale,
+    });
+    
+    // Skip if no previous state or no change
+    if (previousCvRef.current === null) {
+      previousCvRef.current = cvString;
+      return () => {
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
+      };
+    }
+    
+    if (previousCvRef.current === cvString) {
+      return () => {
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
+      };
+    }
+    
+    // Update previous state
+    previousCvRef.current = cvString;
+    
+    // Clear existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    
+    // Set new timeout for auto-save (1.5 seconds after last change)
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      performAutoSave();
+    }, 1500);
+    
+    // Cleanup on unmount or re-render
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [cv, loading, performAutoSave]);
 
   // AI Generation Functions
   const handleGenerateSummary = async () => {
@@ -522,13 +658,23 @@ export default function CVEditor() {
       if (isTemplate || !updatedCV.id) {
         const result = await api.createCV(cvPayload);
         if (result.success && result.cv) {
-          setCV(result.cv as unknown as CV);
+          // Merge returned data with local state to preserve all fields
+          setCV({
+            ...updatedCV,
+            ...result.cv,
+            personal_info: { ...updatedCV.personal_info, ...result.cv.personal_info },
+          } as unknown as CV);
           navigate(`/cv/edit/${result.cv.id}`, { replace: true });
         }
       } else {
         const result = await api.updateCV(updatedCV.id, cvPayload);
         if (result.success && result.cv) {
-          setCV(result.cv as unknown as CV);
+          // Merge returned data with local state to preserve all fields
+          setCV({
+            ...updatedCV,
+            ...result.cv,
+            personal_info: { ...updatedCV.personal_info, ...result.cv.personal_info },
+          } as unknown as CV);
         }
       }
     } catch (error) {
@@ -597,13 +743,49 @@ export default function CVEditor() {
       if (isTemplate || !cv.id) {
         const result = await api.createCV(cvPayload);
         if (result.success && result.cv) {
-          setCV(result.cv as unknown as CV);
+          // Merge returned data with local state to preserve all fields
+          setCV({
+            ...cv,
+            ...result.cv,
+            personal_info: { ...cv.personal_info, ...result.cv.personal_info },
+          } as unknown as CV);
           navigate(`/cv/edit/${result.cv.id}`, { replace: true });
+          setLastSaved(new Date());
+          // Update previous ref to prevent immediate auto-save
+          previousCvRef.current = JSON.stringify({
+            personal_info: cv.personal_info,
+            education: cv.education,
+            experience: cv.experience,
+            skills: cv.skills,
+            languages: cv.languages,
+            certifications: cv.certifications,
+            projects: cv.projects,
+            accent_color: cv.accent_color,
+            is_grayscale: cv.is_grayscale,
+          });
         }
       } else {
         const result = await api.updateCV(cv.id, cvPayload);
         if (result.success && result.cv) {
-          setCV(result.cv as unknown as CV);
+          // Merge returned data with local state to preserve all fields
+          setCV({
+            ...cv,
+            ...result.cv,
+            personal_info: { ...cv.personal_info, ...result.cv.personal_info },
+          } as unknown as CV);
+          setLastSaved(new Date());
+          // Update previous ref to prevent immediate auto-save
+          previousCvRef.current = JSON.stringify({
+            personal_info: cv.personal_info,
+            education: cv.education,
+            experience: cv.experience,
+            skills: cv.skills,
+            languages: cv.languages,
+            certifications: cv.certifications,
+            projects: cv.projects,
+            accent_color: cv.accent_color,
+            is_grayscale: cv.is_grayscale,
+          });
         }
       }
     } catch (error) {
@@ -618,161 +800,37 @@ export default function CVEditor() {
     if (!cv) return;
 
     try {
-      // Create a temporary container for PDF generation
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.style.width = '816px'; // A4 width at 96 DPI
-      tempContainer.style.backgroundColor = 'white';
-      document.body.appendChild(tempContainer);
-
-      // Render the template into the temp container
-      const templateId = cv.template || cv.target_role || 'professional';
-      const TemplateComponent = getTemplateComponent(templateId);
+      setError('');
       
-      // Use React to render the template
-      const { createRoot } = await import('react-dom/client');
-      const root = createRoot(tempContainer);
+      // Use backend API for proper PDF generation with selectable text and links
+      const pdfBlob = await api.exportPDFById(cv.id);
       
-      await new Promise<void>((resolve) => {
-        root.render(<TemplateComponent cv={cv} isViewMode={true} />);
-        // Wait for render to complete
-        setTimeout(resolve, 150);
-      });
-
-      // Extract link positions from the DOM before capturing
-      const links: Array<{url: string; rect: DOMRect}> = [];
-      const linkElements = tempContainer.querySelectorAll('a[href]');
-      linkElements.forEach((el) => {
-        const href = el.getAttribute('href');
-        if (href && (href.startsWith('http') || href.startsWith('mailto:'))) {
-          const rect = el.getBoundingClientRect();
-          const containerRect = tempContainer.getBoundingClientRect();
-          // Adjust rect relative to container
-          links.push({
-            url: href,
-            rect: new DOMRect(
-              rect.left - containerRect.left,
-              rect.top - containerRect.top,
-              rect.width,
-              rect.height
-            )
-          });
-        }
-      });
-
-      // Capture with html2canvas - full content
-      const canvas = await html2canvas(tempContainer, {
-        scale: 2, // Higher quality
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        windowWidth: 816,
-        scrollY: 0,
-        scrollX: 0,
-      });
-
-      // Clean up
-      root.unmount();
-      document.body.removeChild(tempContainer);
-
-      // Create PDF with A4 dimensions
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
+      // Create download link
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${cv.personal_info.full_name || 'cv'}_resume.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
-      // Calculate scaling to fit width
-      const ratio = pdfWidth / (imgWidth / 2); // Divide by scale factor
-      const scaledHeight = (imgHeight / 2) * ratio;
-
-      // Multi-page: split content across pages if needed
-      if (scaledHeight > pdfHeight) {
-        let yPosition = 0;
-        const pageHeight = pdfHeight / ratio * 2; // Height in canvas pixels per page
-        
-        while (yPosition < imgHeight) {
-          if (yPosition > 0) {
-            pdf.addPage();
-          }
-          
-          // Create a canvas for this page section
-          const pageCanvas = document.createElement('canvas');
-          pageCanvas.width = imgWidth;
-          pageCanvas.height = Math.min(pageHeight, imgHeight - yPosition);
-          const ctx = pageCanvas.getContext('2d');
-          
-          if (ctx) {
-            ctx.drawImage(
-              canvas,
-              0, yPosition, imgWidth, pageCanvas.height,
-              0, 0, imgWidth, pageCanvas.height
-            );
-            
-            const pageImgData = pageCanvas.toDataURL('image/png');
-            const pageScaledHeight = (pageCanvas.height / 2) * ratio;
-            pdf.addImage(pageImgData, 'PNG', 0, 0, pdfWidth, pageScaledHeight);
-          }
-          
-          yPosition += pageHeight;
-        }
-      } else {
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, scaledHeight);
-      }
-
-      // Add clickable link annotations based on captured DOM positions
-      // Convert pixel positions to PDF mm coordinates
-      const pxToMm = pdfWidth / 816; // Container width is 816px
-      
-      for (const link of links) {
-        const x = link.rect.left * pxToMm;
-        const y = link.rect.top * pxToMm;
-        const width = link.rect.width * pxToMm;
-        const height = link.rect.height * pxToMm;
-        
-        // Only add links that are on the first page
-        if (y < pdfHeight && width > 0 && height > 0) {
-          pdf.link(x, y, width, height, { url: link.url });
-        }
-      }
-      
-      // Also add direct links from CV data as fallback (in header area)
-      const headerLinkY = 12; // Approximate header link Y position in mm
-      let headerLinkX = pdfWidth - 80; // Start from right side
-      
-      if (cv.personal_info.email) {
-        pdf.link(10, headerLinkY, 60, 5, { url: `mailto:${cv.personal_info.email}` });
-      }
-      if (cv.personal_info.github_url) {
-        pdf.link(headerLinkX, headerLinkY, 25, 5, { url: cv.personal_info.github_url });
-        headerLinkX += 28;
-      }
-      if (cv.personal_info.linkedin_url) {
-        pdf.link(headerLinkX, headerLinkY, 25, 5, { url: cv.personal_info.linkedin_url });
-        headerLinkX += 28;
-      }
-      if (cv.personal_info.portfolio_url) {
-        pdf.link(headerLinkX, headerLinkY, 25, 5, { url: cv.personal_info.portfolio_url });
-      }
-
-      pdf.save(`${cv.personal_info.full_name || 'cv'}_resume.pdf`);
       setShowDownloadMenu(false);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      setError('Failed to download PDF');
+      setError('Failed to download PDF. Please try again.');
     }
   };
 
   const handleDownloadWord = async () => {
     if (!cv) return;
+
+    // Build links section
+    const linksHtml = [
+      cv.personal_info.linkedin_url ? `<a href="${cv.personal_info.linkedin_url}">LinkedIn</a>` : '',
+      cv.personal_info.github_url ? `<a href="${cv.personal_info.github_url}">GitHub</a>` : '',
+      cv.personal_info.portfolio_url ? `<a href="${cv.personal_info.portfolio_url}">Portfolio</a>` : '',
+    ].filter(Boolean).join(' | ');
 
     const htmlContent = `
       <html>
@@ -783,12 +841,15 @@ export default function CVEditor() {
             body { font-family: Arial, sans-serif; line-height: 1.6; }
             .section { margin-bottom: 20px; }
             .section-title { font-size: 18px; font-weight: bold; }
+            a { color: #0066cc; text-decoration: none; }
+            a:hover { text-decoration: underline; }
           </style>
         </head>
         <body>
           <h1>${cv.personal_info.full_name}</h1>
-          <p>${cv.personal_info.email} | ${cv.personal_info.phone}</p>
+          <p><a href="mailto:${cv.personal_info.email}">${cv.personal_info.email}</a> | ${cv.personal_info.phone}</p>
           <p>${cv.personal_info.address}</p>
+          ${linksHtml ? `<p>${linksHtml}</p>` : ''}
           
           <div class="section">
             <div class="section-title">Professional Summary</div>
@@ -1005,6 +1066,30 @@ export default function CVEditor() {
                 Save
               </button>
 
+              {/* Auto-save Status Indicator */}
+              <div className="hidden sm:flex items-center text-xs text-gray-500">
+                {autoSaveStatus === 'saving' && (
+                  <span className="flex items-center gap-1 text-violet-600">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Saving...
+                  </span>
+                )}
+                {autoSaveStatus === 'saved' && (
+                  <span className="flex items-center gap-1 text-green-600">
+                    <Check className="h-3 w-3" />
+                    Saved
+                  </span>
+                )}
+                {autoSaveStatus === 'error' && (
+                  <span className="text-red-500">Save failed</span>
+                )}
+                {autoSaveStatus === 'idle' && lastSaved && (
+                  <span className="text-gray-400">
+                    Last saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+              </div>
+
               <button
                 onClick={() => setShowShareDialog(true)}
                 className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
@@ -1159,9 +1244,66 @@ export default function CVEditor() {
                     ...cv,
                     personal_info: { ...cv.personal_info, address: value }
                   })}
-                  placeholder="New York, NY"
+                  placeholder="123 Main Street"
                   showAI={false}
                 />
+                <AIInput
+                  label="City"
+                  value={cv.personal_info.city || ''}
+                  onChange={(value) => setCV({
+                    ...cv,
+                    personal_info: { ...cv.personal_info, city: value }
+                  })}
+                  placeholder="New York"
+                  showAI={false}
+                />
+                <AIInput
+                  label="Country"
+                  value={cv.personal_info.country || ''}
+                  onChange={(value) => setCV({
+                    ...cv,
+                    personal_info: { ...cv.personal_info, country: value }
+                  })}
+                  placeholder="United States"
+                  showAI={false}
+                />
+              </div>
+
+              {/* Social Links Section */}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <p className="text-sm font-medium text-gray-600 mb-3">Social & Portfolio Links</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <AIInput
+                    label="LinkedIn URL"
+                    value={cv.personal_info.linkedin_url || ''}
+                    onChange={(value) => setCV({
+                      ...cv,
+                      personal_info: { ...cv.personal_info, linkedin_url: value }
+                    })}
+                    placeholder="https://linkedin.com/in/username"
+                    showAI={false}
+                  />
+                  <AIInput
+                    label="GitHub URL"
+                    value={cv.personal_info.github_url || ''}
+                    onChange={(value) => setCV({
+                      ...cv,
+                      personal_info: { ...cv.personal_info, github_url: value }
+                    })}
+                    placeholder="https://github.com/username"
+                    showAI={false}
+                  />
+                  <AIInput
+                    label="Portfolio URL"
+                    value={cv.personal_info.portfolio_url || ''}
+                    onChange={(value) => setCV({
+                      ...cv,
+                      personal_info: { ...cv.personal_info, portfolio_url: value }
+                    })}
+                    placeholder="https://yourportfolio.com"
+                    showAI={false}
+                  />
+                </div>
               </div>
               
               <div className="mt-4">
@@ -1197,7 +1339,9 @@ export default function CVEditor() {
                   start_date: '',
                   end_date: '',
                   current: false,
-                  description: ''
+                  description: '',
+                  achievements: [],
+                  keywords: []
                 }]
               })}
               addLabel="Add Position"
@@ -1348,11 +1492,14 @@ export default function CVEditor() {
                   ...cv,
                   education: [...cv.education, {
                     degree: '',
+                    field_of_study: '',
                     institution: '',
                     location: '',
                     start_date: '',
                     end_date: '',
-                    description: ''
+                    gpa: '',
+                    description: '',
+                    achievements: []
                   }]
                 })}
                 addLabel="Add Education"
@@ -1384,7 +1531,18 @@ export default function CVEditor() {
                               newEdu[index].degree = value;
                               setCV({ ...cv, education: newEdu });
                             }}
-                            placeholder="Bachelor of Science in Computer Science"
+                            placeholder="Bachelor of Science"
+                            showAI={false}
+                          />
+                          <AIInput
+                            label="Field of Study"
+                            value={edu.field_of_study || ''}
+                            onChange={(value) => {
+                              const newEdu = [...cv.education];
+                              newEdu[index].field_of_study = value;
+                              setCV({ ...cv, education: newEdu });
+                            }}
+                            placeholder="Computer Science"
                             showAI={false}
                           />
                           <AIInput
@@ -1396,6 +1554,17 @@ export default function CVEditor() {
                               setCV({ ...cv, education: newEdu });
                             }}
                             placeholder="Stanford University"
+                            showAI={false}
+                          />
+                          <AIInput
+                            label="GPA (optional)"
+                            value={edu.gpa || ''}
+                            onChange={(value) => {
+                              const newEdu = [...cv.education];
+                              newEdu[index].gpa = value;
+                              setCV({ ...cv, education: newEdu });
+                            }}
+                            placeholder="3.8/4.0"
                             showAI={false}
                           />
                           <AIInput
@@ -1547,6 +1716,126 @@ export default function CVEditor() {
                           </select>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                )}
+            </Section>
+
+            {/* Projects */}
+            <Section 
+                title="Projects" 
+                icon={<Code className="h-5 w-5" />}
+                badge={cv.projects?.length || 0}
+                onAdd={() => setCV({
+                  ...cv,
+                  projects: [...(cv.projects || []), { 
+                    name: '', 
+                    description: '', 
+                    technologies: [], 
+                    url: '', 
+                    github_url: '',
+                    highlights: []
+                  }]
+                })}
+                addLabel="Add Project"
+              >
+                {(!cv.projects || cv.projects.length === 0) ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Code className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p>No projects added yet</p>
+                    <p className="text-sm">Showcase your work by adding projects</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {(cv.projects || []).map((project, index) => (
+                      <EntryCard
+                        key={index}
+                        title={project.name || `Project #${index + 1}`}
+                        subtitle={project.technologies?.join(', ') || ''}
+                        onRemove={() => {
+                          const newProjects = [...(cv.projects || [])];
+                          newProjects.splice(index, 1);
+                          setCV({ ...cv, projects: newProjects });
+                        }}
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <AIInput
+                            label="Project Name"
+                            value={project.name}
+                            onChange={(value) => {
+                              const newProjects = [...(cv.projects || [])];
+                              newProjects[index].name = value;
+                              setCV({ ...cv, projects: newProjects });
+                            }}
+                            placeholder="E-Commerce Platform"
+                            showAI={false}
+                          />
+                          <AIInput
+                            label="Technologies (comma separated)"
+                            value={project.technologies?.join(', ') || ''}
+                            onChange={(value) => {
+                              const newProjects = [...(cv.projects || [])];
+                              newProjects[index].technologies = value.split(',').map(t => t.trim()).filter(Boolean);
+                              setCV({ ...cv, projects: newProjects });
+                            }}
+                            placeholder="React, Node.js, MongoDB"
+                            showAI={false}
+                          />
+                          <AIInput
+                            label="Live Demo URL (optional)"
+                            value={project.url || ''}
+                            onChange={(value) => {
+                              const newProjects = [...(cv.projects || [])];
+                              newProjects[index].url = value;
+                              setCV({ ...cv, projects: newProjects });
+                            }}
+                            placeholder="https://myproject.com"
+                            showAI={false}
+                          />
+                          <AIInput
+                            label="GitHub URL (optional)"
+                            value={project.github_url || ''}
+                            onChange={(value) => {
+                              const newProjects = [...(cv.projects || [])];
+                              newProjects[index].github_url = value;
+                              setCV({ ...cv, projects: newProjects });
+                            }}
+                            placeholder="https://github.com/user/project"
+                            showAI={false}
+                          />
+                        </div>
+                        <div className="mt-4">
+                          <AIInput
+                            label="Description"
+                            value={project.description}
+                            onChange={(value) => {
+                              const newProjects = [...(cv.projects || [])];
+                              newProjects[index].description = value;
+                              setCV({ ...cv, projects: newProjects });
+                            }}
+                            placeholder="Describe what the project does, your role, and key achievements..."
+                            multiline
+                            rows={3}
+                            showAI={false}
+                          />
+                        </div>
+                        <div className="mt-4">
+                          <label className="text-sm font-medium text-gray-700">Key Highlights (one per line)</label>
+                          <textarea
+                            value={project.highlights?.join('\n') || ''}
+                            onChange={(e) => {
+                              const newProjects = [...(cv.projects || [])];
+                              newProjects[index].highlights = e.target.value.split('\n').filter(h => h.trim());
+                              setCV({ ...cv, projects: newProjects });
+                            }}
+                            rows={3}
+                            placeholder="• Increased user engagement by 40%\n• Implemented real-time notifications\n• Deployed to 10,000+ users"
+                            className="mt-2 w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80
+                              focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500
+                              text-gray-900 placeholder-gray-400"
+                          />
+                        </div>
+                      </EntryCard>
                     ))}
                   </div>
                 )}

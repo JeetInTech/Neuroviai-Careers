@@ -205,7 +205,7 @@ async def analyze_saved_cv(
     """Analyze a saved CV"""
     from ..database import get_supabase_client
     
-    user = await get_current_user(authorization)
+    user = get_current_user(authorization)
     supabase = get_supabase_client()
     
     # Get CV

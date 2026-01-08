@@ -202,7 +202,7 @@ async def import_linkedin_profile(
     Get your API key at: https://nubela.co/proxycurl
     """
     # Verify user is authenticated
-    await get_current_user(authorization)
+    get_current_user(authorization)
     
     # Validate LinkedIn URL
     normalized_url = validate_linkedin_url(request.linkedin_url)

@@ -156,3 +156,54 @@ async def suggest_improvements(request: SuggestionsRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
+
+
+# ============================================
+# AI RESUME TAILORING ENDPOINT
+# ============================================
+
+class TailorResumeRequest(BaseModel):
+    cv_data: Dict[str, Any]
+    job_description: str
+    job_title: Optional[str] = None
+
+
+class JobAnalysis(BaseModel):
+    required_skills: List[str]
+    ats_keywords: List[str]
+    key_responsibilities: List[str]
+
+
+class TailorResumeResponse(BaseModel):
+    tailored_cv: Dict[str, Any]
+    match_score: int
+    job_analysis: JobAnalysis
+    optimizations_made: List[str]
+
+
+@router.post("/tailor-resume", response_model=TailorResumeResponse)
+async def tailor_resume_to_job(request: TailorResumeRequest):
+    """
+    AI-powered resume tailoring to match a specific job description.
+    
+    This endpoint:
+    1. Analyzes the job description to extract requirements
+    2. Rewrites the professional summary to match the job
+    3. Optimizes experience bullet points with relevant keywords
+    4. Reorders and enhances skills list
+    5. Calculates a match score
+    """
+    try:
+        result = await ai_service.tailor_resume_to_job(
+            cv_data=request.cv_data,
+            job_description=request.job_description,
+            job_title=request.job_title
+        )
+        return TailorResumeResponse(
+            tailored_cv=result['tailored_cv'],
+            match_score=result['match_score'],
+            job_analysis=JobAnalysis(**result['job_analysis']),
+            optimizations_made=result['optimizations_made']
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI tailoring failed: {str(e)}")

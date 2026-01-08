@@ -4,8 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
 import type { CV, LaTeXExportOptions } from '../lib/database.types';
 import { Download, Share2, Save, ArrowLeft, Eye, Palette, Camera, X, Check } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import ShareCVDialog from '../components/ShareCVDialog';
 import { downloadLaTeX, getRecommendedTemplate } from '../lib/latex-generator';
 import { getTemplateComponent } from '../components/templates';
@@ -194,23 +192,28 @@ export default function CVEditor() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!cvRef.current) return;
+    if (!cv) return;
 
     try {
-      const canvas = await html2canvas(cvRef.current);
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [canvas.width, canvas.height]
-      });
-
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save('cv.pdf');
+      setError('');
+      
+      // Use backend API for proper PDF generation with selectable text and links
+      const pdfBlob = await api.exportPDFById(cv.id);
+      
+      // Create download link
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${cv.personal_info.full_name || 'cv'}_resume.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
       setShowDownloadMenu(false);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      setError('Failed to download PDF');
+      setError('Failed to download PDF. Please try again.');
     }
   };
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -9,10 +9,11 @@ import CVMaker from './pages/Portfolio';
 import CVEditor from './pages/CVEditorAI';
 import Home from './pages/Home';
 import ForgotPassword from './pages/ForgotPassword';
-import { useAuth } from './contexts/AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
 
 /**
  * Protected route wrapper - redirects to login if not authenticated
+ * Must be used inside AuthProvider
  */
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -32,63 +33,74 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 /**
+ * App content that requires AuthProvider context
+ */
+function AppContent() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <main>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          
+          {/* Protected Routes */}
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/portfolio"
+            element={
+              <PrivateRoute>
+                <CVMaker />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/cv/edit/:id"
+            element={
+              <PrivateRoute>
+                <CVEditor />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/cv/new"
+            element={
+              <PrivateRoute>
+                <CVEditor />
+              </PrivateRoute>
+            }
+          />
+          
+          {/* Catch-all redirect */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+/**
  * Main App Component - CV Forge
  */
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar />
-          <main>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              
-              {/* Protected Routes */}
-              <Route
-                path="/profile"
-                element={
-                  <PrivateRoute>
-                    <Profile />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/portfolio"
-                element={
-                  <PrivateRoute>
-                    <CVMaker />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/cv/edit/:id"
-                element={
-                  <PrivateRoute>
-                    <CVEditor />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/cv/new"
-                element={
-                  <PrivateRoute>
-                    <CVEditor />
-                  </PrivateRoute>
-                }
-              />
-              
-              {/* Catch-all redirect */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-        </div>
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

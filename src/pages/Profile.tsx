@@ -161,30 +161,45 @@ export default function ProfilePage() {
       setUploadingCV(true);
       setUploadMessage(null);
 
-      const fileName = `${user!.id}/cv_${Date.now()}.${file.name.split('.').pop()}`;
-      const { error: uploadError } = await supabase.storage
-        .from('user-cvs')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from('user-cvs').getPublicUrl(fileName);
-
+      // First, parse the document through backend
       const parseResult = await api.parseDocument(file);
       
       if (parseResult.success && parseResult.data) {
-        await api.updateProfile({
-          uploaded_cv_url: publicUrl,
-          parsed_cv_data: parseResult.data,
-        } as any);
+        // Try to upload to storage (optional - may not have bucket set up)
+        let publicUrl = '';
+        try {
+          const fileName = `${user!.id}/cv_${Date.now()}.${file.name.split('.').pop()}`;
+          const { error: uploadError } = await supabase.storage
+            .from('user-cvs')
+            .upload(fileName, file, { upsert: true });
 
-        setUploadedCVUrl(publicUrl);
+          if (!uploadError) {
+            const { data } = supabase.storage.from('user-cvs').getPublicUrl(fileName);
+            publicUrl = data.publicUrl;
+          }
+        } catch (storageError) {
+          console.warn('Storage upload skipped:', storageError);
+        }
+
+        // Update profile with parsed data
+        try {
+          await api.updateProfile({
+            uploaded_cv_url: publicUrl || undefined,
+            parsed_cv_data: parseResult.data,
+          } as any);
+        } catch (profileError) {
+          console.warn('Profile update skipped:', profileError);
+        }
+
+        setUploadedCVUrl(publicUrl || null);
         setParsedCVData(parseResult.data as any);
-        setUploadMessage({ type: 'success', text: 'Resume uploaded and parsed successfully.' });
+        setUploadMessage({ type: 'success', text: 'Resume parsed successfully! You can now use it for AI tailoring.' });
+      } else {
+        throw new Error('Failed to parse document');
       }
     } catch (error) {
       console.error('Error uploading CV:', error);
-      setUploadMessage({ type: 'error', text: 'Failed to upload resume. Please try again.' });
+      setUploadMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to upload resume. Please try again.' });
     } finally {
       setUploadingCV(false);
     }
@@ -557,7 +572,7 @@ export default function ProfilePage() {
                         </span>
                       )}
                       <Link
-                        to={`/cv/${cv.id}`}
+                        to={`/cv/edit/${cv.id}`}
                         className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
                       >
                         <Edit className="h-4 w-4" />

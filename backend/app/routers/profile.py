@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, status, Header
+from fastapi import APIRouter, HTTPException, status, Header, Depends
 from typing import Optional
 from ..models import ProfileUpdate, ProfileResponse
 from ..database import get_supabase_client, get_supabase_admin
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
-async def get_current_user(authorization: str = Header(...)):
+
+def get_current_user(authorization: str = Header(...)):
     """Extract and validate user from authorization header"""
     if not authorization.startswith("Bearer "):
         raise HTTPException(
@@ -34,7 +35,7 @@ async def get_current_user(authorization: str = Header(...)):
 @router.get("/me")
 async def get_my_profile(authorization: str = Header(...)):
     """Get current user's profile"""
-    user = await get_current_user(authorization)
+    user = get_current_user(authorization)
     supabase = get_supabase_admin()  # Use admin to bypass RLS
     
     # Use maybe_single() to handle 0 rows gracefully
@@ -59,7 +60,7 @@ async def update_my_profile(
     authorization: str = Header(...)
 ):
     """Update current user's profile"""
-    user = await get_current_user(authorization)
+    user = get_current_user(authorization)
     supabase = get_supabase_admin()  # Use admin to bypass RLS
     
     # Build update data, excluding None values
