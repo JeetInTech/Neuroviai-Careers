@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { User, Heart, MessageCircle, Eye, Lock } from 'lucide-react';
@@ -85,7 +85,10 @@ export default function Creators() {
         likes: post.likes?.length || 0,
         comments: post.comments?.length || 0,
         liked_by_user: likedPosts.includes(post.id),
-        post_comments: post.comments,
+        post_comments: post.comments?.map((comment) => ({
+          ...comment,
+          user: Array.isArray(comment.user) ? comment.user[0] : comment.user
+        })),
         user: post.user[0],
         cv: post.cv?.[0]
       })) || [];
@@ -219,7 +222,7 @@ export default function Creators() {
                 </div>
                 
                 {/* Add delete button - only show for user's own posts */}
-                {user && post.user?.username === user.user_metadata.username && (
+                {user && post.user?.username === user.username && (
                   <button
                     onClick={() => {
                       if (window.confirm('Are you sure you want to delete this post?')) {
