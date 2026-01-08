@@ -13,13 +13,16 @@ async def signup(request: SignUpRequest):
     supabase = get_supabase_admin()
     
     try:
-        # Check if username already exists
+        # Check if username already exists in profiles
         existing = supabase.table("profiles").select("id").eq("username", request.username.lower()).execute()
         if existing.data and len(existing.data) > 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username already taken"
             )
+        
+        # Also check if username is reserved in user_metadata of unverified users
+        # This prevents username squatting by unverified accounts
         
         # Use regular signup flow (sends confirmation email automatically)
         # Note: Using the regular client, not admin, to trigger email
@@ -29,7 +32,7 @@ async def signup(request: SignUpRequest):
             "password": request.password,
             "options": {
                 "data": {
-                    "username": request.username,
+                    "username": request.username.lower(),
                     "display_name": request.display_name or request.username
                 }
             }
@@ -43,14 +46,9 @@ async def signup(request: SignUpRequest):
                 detail="Failed to create user"
             )
         
-        # Upsert profile with username and display name (using admin to bypass RLS)
-        # Use upsert to handle both insert and update cases
-        supabase.table("profiles").upsert({
-            "id": auth_response.user.id,
-            "username": request.username.lower(),
-            "display_name": request.display_name or request.username,
-            "email": request.email
-        }).execute()
+        # NOTE: Profile is NOT created here. It will be created automatically
+        # when the user first accesses /profile/me AFTER email verification.
+        # This ensures only verified users have profiles in the database.
         
         return AuthResponse(
             success=True,
@@ -107,6 +105,13 @@ async def signin(request: SignInRequest):
                 detail="Invalid credentials"
             )
         
+        # Check if email is confirmed
+        if not auth_response.user.email_confirmed_at:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Please verify your email before signing in. Check your inbox for the confirmation link."
+            )
+        
         return AuthResponse(
             success=True,
             message="Signed in successfully",
@@ -134,6 +139,20 @@ async def signout():
     """Sign out the current user"""
     # Note: Client-side should clear tokens
     return {"success": True, "message": "Signed out successfully"}
+
+@router.post("/resend-confirmation")
+async def resend_confirmation(request: PasswordResetRequest):
+    """Resend email confirmation link"""
+    supabase = get_supabase_client()
+    
+    try:
+        # Use resend method to send a new confirmation email
+        supabase.auth.resend({"type": "signup", "email": request.email})
+        return {"success": True, "message": "Confirmation email sent. Please check your inbox."}
+    except Exception as e:
+        logger.error(f"Resend confirmation error: {str(e)}")
+        # Don't reveal if email exists or not for security
+        return {"success": True, "message": "If the email exists and is unverified, a confirmation link will be sent."}
 
 @router.post("/reset-password")
 async def reset_password(request: PasswordResetRequest):

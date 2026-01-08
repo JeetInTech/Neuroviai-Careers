@@ -25,7 +25,17 @@ def get_current_user(authorization: str = Header(...)):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token"
             )
+        
+        # Enforce email verification for all protected routes
+        if not user.user.email_confirmed_at:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Email not verified. Please check your inbox and confirm your email."
+            )
+        
         return user.user
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
