@@ -3,7 +3,7 @@
  * Handles all AI generation requests using Groq API
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://neurovia-career.onrender.com';
 
 /**
  * Get authorization header if user is logged in
