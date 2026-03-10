@@ -31,7 +31,7 @@ import {
   Quote
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { FULL_PREVIEW_TEMPLATES } from '../components/FullTemplatePreviews';
+import { FULL_PREVIEW_TEMPLATES } from '../components/templatePreviewHelpers';
 
 const FEATURES = [
   {
@@ -64,7 +64,7 @@ const STATS = [
   { value: '50K+', label: 'Resumes Created', icon: FileText },
   { value: '94%', label: 'Average ATS Score', icon: Target },
   { value: '2 min', label: 'Build Time', icon: Clock },
-  { value: '25+', label: 'Templates', icon: Palette },
+  { value: '20+', label: 'Templates', icon: Palette },
 ];
 
 const TESTIMONIALS = [
@@ -409,10 +409,10 @@ export default function Home() {
           <div className="text-center mb-12">
             <span className="inline-flex items-center px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-sm font-medium mb-4">
               <Palette className="w-4 h-4 mr-2" />
-              25+ Professional Templates
+              20+ Professional Templates
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Templates For Every Role</h2>
-            <p className="mt-4 text-lg text-gray-600">ATS-optimized designs for software, finance, healthcare, and more</p>
+            <p className="mt-4 text-lg text-gray-600">ATS-optimized designs for engineering, data science, creative, and more</p>
           </div>
           
           {/* Template Carousel */}
@@ -465,7 +465,7 @@ export default function Home() {
                   to="/portfolio"
                   className="flex-shrink-0 px-4 py-3 rounded-xl text-center bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all font-medium text-sm"
                 >
-                  View All 25+ →
+                  View All Templates →
                 </Link>
               </div>
             </div>

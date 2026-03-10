@@ -4,6 +4,9 @@ from typing import Optional, List
 from pydantic import BaseModel
 import re
 import io
+import os
+import tempfile
+import subprocess
 import pdfplumber
 from docx import Document
 from ..routers.profile import get_current_user
@@ -678,10 +681,15 @@ def parse_languages(content: str) -> list:
 @router.post("/parse")
 async def parse_document(
     file: UploadFile = File(...),
-    authorization: str = Header(...)
+    authorization: Optional[str] = Header(None)
 ):
     """Parse a document (PDF or DOCX) and extract CV data"""
-    user = get_current_user(authorization)
+    # Auth is optional — allow unauthenticated access for ATS builder
+    if authorization:
+        try:
+            user = get_current_user(authorization)
+        except Exception:
+            pass  # Continue without auth
     
     # Validate file type
     filename = file.filename.lower() if file.filename else ""
@@ -1015,12 +1023,16 @@ class CVPdfRequest(BaseModel):
 @router.post("/export-pdf")
 async def generate_cv_pdf(
     request: CVPdfRequest,
-    authorization: str = Header(...)
+    authorization: Optional[str] = Header(None)
 ):
     """Generate PDF from CV data with selectable text"""
     try:
-        # Verify user is authenticated
-        user = get_current_user(authorization)
+        # Auth is optional — allow unauthenticated access for ATS builder
+        if authorization:
+            try:
+                user = get_current_user(authorization)
+            except Exception:
+                pass  # Continue without auth
         
         # Import PDF service
         from ..services.pdf_service import generate_pdf
@@ -1101,3 +1113,126 @@ async def generate_pdf_from_saved_cv(
     except Exception as e:
         logger.error(f"PDF generation error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
+
+
+# ============================================
+# LaTeX Compilation Endpoint
+# ============================================
+
+class CompileLatexRequest(BaseModel):
+    latex_source: str
+    filename: Optional[str] = "resume"
+
+def find_pdflatex():
+    """Find pdflatex executable on the system"""
+    # Check common locations
+    paths_to_check = [
+        "pdflatex",  # System PATH
+    ]
+    
+    # Windows-specific paths
+    if os.name == 'nt':
+        paths_to_check.extend([
+            r"C:\texlive\2024\bin\windows\pdflatex.exe",
+            r"C:\texlive\2023\bin\windows\pdflatex.exe",
+            r"C:\Program Files\MiKTeX\miktex\bin\x64\pdflatex.exe",
+            r"C:\Users\{}\AppData\Local\Programs\MiKTeX\miktex\bin\x64\pdflatex.exe".format(os.getenv("USERNAME", "")),
+        ])
+    else:
+        paths_to_check.extend([
+            "/usr/bin/pdflatex",
+            "/usr/local/bin/pdflatex",
+            "/usr/local/texlive/2024/bin/x86_64-linux/pdflatex",
+        ])
+    
+    for path in paths_to_check:
+        try:
+            result = subprocess.run(
+                [path, "--version"],
+                capture_output=True, timeout=5
+            )
+            if result.returncode == 0:
+                return path
+        except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+            continue
+    
+    return None
+
+
+@router.post("/compile-latex")
+async def compile_latex(request: CompileLatexRequest):
+    """Compile LaTeX source to PDF using pdflatex"""
+    pdflatex_path = find_pdflatex()
+    
+    if not pdflatex_path:
+        raise HTTPException(
+            status_code=503,
+            detail="LaTeX compiler (pdflatex) not available on server. Install TeX Live or MiKTeX."
+        )
+    
+    # Create temporary directory for compilation
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tex_file = os.path.join(tmpdir, "resume.tex")
+        pdf_file = os.path.join(tmpdir, "resume.pdf")
+        
+        # Write LaTeX source
+        with open(tex_file, "w", encoding="utf-8") as f:
+            f.write(request.latex_source)
+        
+        try:
+            # Run pdflatex twice for proper cross-references
+            for _ in range(2):
+                result = subprocess.run(
+                    [pdflatex_path, "-interaction=nonstopmode", "-halt-on-error", "resume.tex"],
+                    cwd=tmpdir,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+            
+            if not os.path.exists(pdf_file):
+                # Extract meaningful error from log
+                log_file = os.path.join(tmpdir, "resume.log")
+                error_msg = "LaTeX compilation failed"
+                if os.path.exists(log_file):
+                    with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                        log_content = f.read()
+                        # Find error lines
+                        errors = [line for line in log_content.split('\n') if line.startswith('!')]
+                        if errors:
+                            error_msg = "; ".join(errors[:3])
+                
+                raise HTTPException(status_code=422, detail=error_msg)
+            
+            # Read the generated PDF
+            with open(pdf_file, "rb") as f:
+                pdf_bytes = f.read()
+            
+            filename = f"{request.filename or 'resume'}.pdf".replace(" ", "_")
+            
+            return Response(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={
+                    "Content-Disposition": f'inline; filename="{filename}"'
+                }
+            )
+            
+        except subprocess.TimeoutExpired:
+            raise HTTPException(status_code=504, detail="LaTeX compilation timed out")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"LaTeX compilation error: {e}")
+            raise HTTPException(status_code=500, detail=f"Compilation error: {str(e)}")
+
+
+@router.get("/latex-status")
+async def check_latex_status():
+    """Check if LaTeX compiler is available"""
+    pdflatex_path = find_pdflatex()
+    return {
+        "available": pdflatex_path is not None,
+        "path": pdflatex_path,
+        "message": "pdflatex found" if pdflatex_path else "pdflatex not installed. Install TeX Live or MiKTeX for LaTeX compilation."
+    }

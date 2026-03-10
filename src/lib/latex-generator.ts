@@ -11,10 +11,14 @@
 
 import type { CV, LaTeXExportOptions } from './database.types';
 
+export type ResumeSection = 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'languages';
+
+const DEFAULT_SECTION_ORDER: ResumeSection[] = ['summary', 'skills', 'experience', 'projects', 'education', 'certifications', 'languages'];
+
 // Default export options
 const DEFAULT_OPTIONS: LaTeXExportOptions = {
   template: 'professional',
-  font_size: '11pt',
+  font_size: '10pt',
   paper_size: 'a4paper',
   include_photo: false,
 };
@@ -59,94 +63,20 @@ function formatDateRange(startDate: string, endDate: string, current: boolean): 
 /**
  * Generates the LaTeX preamble/header - ATS optimized
  */
-function generatePreamble(options: LaTeXExportOptions): string {
-  const margin = options.template === 'minimal' ? '0.5in' : '0.6in';
-
-  return `%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% CV Forge - ATS-Optimized Resume
-% LaTeX Template - Generated ${new Date().toISOString().split('T')[0]}
-%
-% This template is designed for:
-% - Maximum ATS compatibility (90%+ parse rate)
-% - Clean, professional typography
-% - Single-column layout for easy parsing
-% - Standard LaTeX packages only
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\\documentclass[${options.font_size},${options.paper_size}]{article}
-
-% ===== PACKAGES =====
-\\usepackage[utf8]{inputenc}
-\\usepackage[T1]{fontenc}
-\\usepackage{lmodern}           % Clean, modern font
-\\usepackage[margin=${margin}]{geometry}
-\\usepackage{hyperref}
+function generatePreamble(): string {
+  return `\\documentclass[10pt]{article}
+\\usepackage[margin=0.4in]{geometry}
 \\usepackage{enumitem}
+\\usepackage{hyperref}
 \\usepackage{titlesec}
-\\usepackage{xcolor}
-\\usepackage{parskip}
-
-% ===== COLOR DEFINITIONS =====
-\\definecolor{headercolor}{RGB}{0, 0, 0}
-\\definecolor{sectioncolor}{RGB}{30, 30, 30}
-\\definecolor{textcolor}{RGB}{40, 40, 40}
-\\definecolor{linkcolor}{RGB}{0, 102, 204}
-
-% ===== HYPERLINK SETUP =====
-\\hypersetup{
-    colorlinks=true,
-    linkcolor=linkcolor,
-    urlcolor=linkcolor,
-    pdfauthor={CV Forge},
-    pdftitle={Professional Resume},
-}
-
-% ===== SECTION FORMATTING =====
-\\titleformat{\\section}
-    {\\Large\\bfseries\\color{sectioncolor}\\uppercase}
-    {}
-    {0em}
-    {}
-    [\\vspace{-0.5em}\\titlerule\\vspace{0.3em}]
-    
-\\titlespacing{\\section}{0pt}{1em}{0.5em}
-
-% ===== LIST FORMATTING =====
-\\setlist[itemize]{
-    leftmargin=1.5em,
-    itemsep=0.2em,
-    parsep=0em,
-    topsep=0.3em
-}
-
-% ===== REMOVE PAGE NUMBERS =====
+\\setlist[itemize]{leftmargin=*, noitemsep, topsep=2pt, parsep=0pt}
 \\pagestyle{empty}
-
-% ===== CUSTOM COMMANDS =====
-% Job entry: {Title}{Date Range}{Company}{Location}
-\\newcommand{\\jobentry}[4]{%
-    \\noindent\\textbf{#1} \\hfill \\textit{#2}\\\\
-    \\textit{#3} \\hfill #4
-    \\vspace{0.3em}
-}
-
-% Education entry: {Degree}{Date}{Institution}{Location}
-\\newcommand{\\eduentry}[4]{%
-    \\noindent\\textbf{#1} \\hfill \\textit{#2}\\\\
-    #3 \\hfill #4
-    \\vspace{0.3em}
-}
-
-% Project entry: {Name}{Technologies}{Description}
-\\newcommand{\\projectentry}[3]{%
-    \\noindent\\textbf{#1}\\\\
-    \\textit{Technologies: #2}\\\\
-    #3
-    \\vspace{0.5em}
-}
+\\setlength{\\parindent}{0pt}
+\\setlength{\\parskip}{0pt}
+\\titlespacing{\\section}{0pt}{6pt}{3pt}
+\\hypersetup{hidelinks}
 
 \\begin{document}
-\\color{textcolor}
 `;
 }
 
@@ -155,39 +85,39 @@ function generatePreamble(options: LaTeXExportOptions): string {
  */
 function generateHeader(cv: CV): string {
   const { personal_info } = cv;
-  const contactItems: string[] = [];
+  const contactParts: string[] = [];
 
-  if (personal_info.email) {
-    contactItems.push(`\\href{mailto:${personal_info.email}}{${escapeLatex(personal_info.email)}}`);
-  }
   if (personal_info.phone) {
-    contactItems.push(escapeLatex(personal_info.phone));
+    contactParts.push(escapeLatex(personal_info.phone));
   }
-  if (personal_info.city && personal_info.country) {
-    contactItems.push(`${escapeLatex(personal_info.city)}, ${escapeLatex(personal_info.country)}`);
-  } else if (personal_info.address) {
-    contactItems.push(escapeLatex(personal_info.address));
+  if (personal_info.email) {
+    contactParts.push(escapeLatex(personal_info.email));
   }
-
-  const socialLinks: string[] = [];
   if (personal_info.linkedin_url) {
-    socialLinks.push(`\\href{${personal_info.linkedin_url}}{LinkedIn}`);
+    const display = personal_info.linkedin_url.replace(/^https?:\/\/(www\.)?/, '');
+    contactParts.push(`\\href{${personal_info.linkedin_url}}{${escapeLatex(display)}}`);
   }
   if (personal_info.github_url) {
-    socialLinks.push(`\\href{${personal_info.github_url}}{GitHub}`);
+    const display = personal_info.github_url.replace(/^https?:\/\/(www\.)?/, '');
+    contactParts.push(`\\href{${personal_info.github_url}}{${escapeLatex(display)}}`);
   }
   if (personal_info.portfolio_url) {
-    socialLinks.push(`\\href{${personal_info.portfolio_url}}{Portfolio}`);
+    const display = personal_info.portfolio_url.replace(/^https?:\/\/(www\.)?/, '');
+    contactParts.push(`\\href{${personal_info.portfolio_url}}{${escapeLatex(display)}}`);
+  }
+  if (personal_info.city && personal_info.country) {
+    contactParts.push(`${escapeLatex(personal_info.city)}, ${escapeLatex(personal_info.country)}`);
+  } else if (personal_info.address) {
+    contactParts.push(escapeLatex(personal_info.address));
   }
 
   return `
-% ===== HEADER =====
 \\begin{center}
-    {\\Huge\\bfseries\\color{headercolor} ${escapeLatex(personal_info.full_name)}}\\\\[0.4em]
-    ${contactItems.join(' $\\cdot$ ')}
-    ${socialLinks.length > 0 ? `\\\\[0.2em]\n    ${socialLinks.join(' $\\cdot$ ')}` : ''}
+{\\Large \\textbf{${escapeLatex(personal_info.full_name).toUpperCase()}}} \\\\[2pt]
+{\\small ${contactParts.join(' $|$ ')}}
 \\end{center}
-\\vspace{0.5em}
+
+\\noindent\\rule{\\textwidth}{0.4pt}
 `;
 }
 
@@ -197,8 +127,7 @@ function generateHeader(cv: CV): string {
 function generateSummary(cv: CV): string {
   if (!cv.personal_info.summary) return '';
   return `
-% ===== PROFESSIONAL SUMMARY =====
-\\section{Professional Summary}
+\\section*{SUMMARY}
 ${escapeLatex(cv.personal_info.summary)}
 `;
 }
@@ -212,25 +141,25 @@ function generateExperience(cv: CV): string {
   const entries = cv.experience.map(exp => {
     const dateRange = formatDateRange(exp.start_date, exp.end_date, exp.current);
     
-    let content = `
-\\jobentry{${escapeLatex(exp.title)}}{${dateRange}}{${escapeLatex(exp.company)}}{${escapeLatex(exp.location)}}`;
+    let content = `\\textbf{${escapeLatex(exp.company)} -- ${escapeLatex(exp.title)}} \\hfill ${dateRange}`;
 
     if (exp.achievements && exp.achievements.length > 0) {
       content += `
 \\begin{itemize}
-${exp.achievements.map(a => `    \\item ${escapeLatex(a)}`).join('\n')}
+${exp.achievements.map(a => `\\item ${escapeLatex(a)}`).join('\n')}
 \\end{itemize}`;
     } else if (exp.description) {
       content += `
-${escapeLatex(exp.description)}`;
+\\begin{itemize}
+\\item ${escapeLatex(exp.description)}
+\\end{itemize}`;
     }
 
     return content;
-  }).join('\n\\vspace{0.5em}\n');
+  }).join('\n\n');
 
   return `
-% ===== EXPERIENCE =====
-\\section{Experience}
+\\section*{EXPERIENCE}
 ${entries}
 `;
 }
@@ -244,31 +173,29 @@ function generateEducation(cv: CV): string {
   const entries = cv.education.map(edu => {
     const dateRange = formatDateRange(edu.start_date, edu.end_date, false);
     const degree = edu.field_of_study 
-      ? `${escapeLatex(edu.degree)} in ${escapeLatex(edu.field_of_study)}`
+      ? `${escapeLatex(edu.degree)}, ${escapeLatex(edu.field_of_study)}`
       : escapeLatex(edu.degree);
 
-    let content = `
-\\eduentry{${degree}}{${dateRange}}{${escapeLatex(edu.institution)}}{${escapeLatex(edu.location)}}`;
+    let content = `\\textbf{${degree}} -- ${escapeLatex(edu.institution)} \\hfill ${dateRange}`;
 
     if (edu.gpa) {
-      content += `\\\\GPA: ${escapeLatex(edu.gpa)}`;
+      content += ` \\hfill GPA: ${escapeLatex(edu.gpa)}`;
     }
     if (edu.description) {
-      content += `\\\\${escapeLatex(edu.description)}`;
+      content += `\n${escapeLatex(edu.description)}`;
     }
     if (edu.achievements && edu.achievements.length > 0) {
       content += `
 \\begin{itemize}
-${edu.achievements.map(a => `    \\item ${escapeLatex(a)}`).join('\n')}
+${edu.achievements.map(a => `\\item ${escapeLatex(a)}`).join('\n')}
 \\end{itemize}`;
     }
 
     return content;
-  }).join('\n\\vspace{0.3em}\n');
+  }).join('\n\n');
 
   return `
-% ===== EDUCATION =====
-\\section{Education}
+\\section*{EDUCATION}
 ${entries}
 `;
 }
@@ -294,8 +221,7 @@ function generateSkills(cv: CV): string {
     .join(' \\\\\n');
 
   return `
-% ===== TECHNICAL SKILLS =====
-\\section{Technical Skills}
+\\section*{TECHNICAL SKILLS}
 ${skillLines}
 `;
 }
@@ -307,18 +233,15 @@ function generateCertifications(cv: CV): string {
   if (!cv.certifications || cv.certifications.length === 0) return '';
 
   const entries = cv.certifications.map(cert => {
-    const certLine = cert.url 
+    const certName = cert.url 
       ? `\\href{${cert.url}}{${escapeLatex(cert.name)}}`
       : escapeLatex(cert.name);
-    return `    \\item ${certLine} -- ${escapeLatex(cert.issuer)} (${cert.date})`;
-  }).join('\n');
+    return `${certName} \$|\$ ${escapeLatex(cert.issuer)}${cert.date ? ` \$|\$ ${cert.date}` : ''}`;
+  }).join(' \\\\\n');
 
   return `
-% ===== CERTIFICATIONS =====
-\\section{Certifications}
-\\begin{itemize}[leftmargin=1em]
+\\section*{CERTIFICATIONS}
 ${entries}
-\\end{itemize}
 `;
 }
 
@@ -331,20 +254,34 @@ function generateProjects(cv: CV): string {
   const entries = cv.projects.map(project => {
     const techStack = project.technologies.length > 0 
       ? project.technologies.map(escapeLatex).join(', ')
-      : 'N/A';
+      : '';
+    
+    const parts = [`\\textbf{${escapeLatex(project.name)}}`];
+    if (techStack) parts.push(`\\textit{${techStack}}`);
     
     const links: string[] = [];
-    if (project.url) links.push(`\\href{${project.url}}{Live}`);
+    if (project.url) links.push(`\\href{${project.url}}{${escapeLatex(project.url.replace(/^https?:\/\/(www\.)?/, ''))}}`);
     if (project.github_url) links.push(`\\href{${project.github_url}}{GitHub}`);
-    const linkText = links.length > 0 ? ` [${links.join(' | ')}]` : '';
+    if (links.length > 0) parts.push(links.join(' $|$ '));
 
-    return `
-\\projectentry{${escapeLatex(project.name)}${linkText}}{${techStack}}{${escapeLatex(project.description)}}`;
-  }).join('\n');
+    let content = parts.join(' $|$ ');
+    if (project.highlights && project.highlights.length > 0) {
+      content += `
+\\begin{itemize}
+${project.highlights.map(h => `\\item ${escapeLatex(h)}`).join('\n')}
+\\end{itemize}`;
+    } else if (project.description) {
+      content += `
+\\begin{itemize}
+\\item ${escapeLatex(project.description)}
+\\end{itemize}`;
+    }
+
+    return content;
+  }).join('\n\n');
 
   return `
-% ===== PROJECTS =====
-\\section{Projects}
+\\section*{PROJECTS}
 ${entries}
 `;
 }
@@ -360,8 +297,7 @@ function generateLanguages(cv: CV): string {
     .join(', ');
 
   return `
-% ===== LANGUAGES =====
-\\section{Languages}
+\\section*{LANGUAGES}
 ${langList}
 `;
 }
@@ -462,15 +398,22 @@ const TEMPLATE_CONFIGS: Record<string, string[]> = {
 };
 
 /**
+ * Get default section order for a role
+ */
+export function getDefaultSectionOrder(role: string): ResumeSection[] {
+  const order = TEMPLATE_CONFIGS[role] || TEMPLATE_CONFIGS['professional'];
+  return order.filter(s => s !== 'header') as ResumeSection[];
+}
+
+/**
  * Main function to generate complete LaTeX document
  */
-export function generateLaTeX(cv: CV, options: Partial<LaTeXExportOptions> = {}): string {
+export function generateLaTeX(cv: CV, options: Partial<LaTeXExportOptions> = {}, customSectionOrder?: ResumeSection[]): string {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const templateName = opts.template || 'professional';
-  const sectionOrder = TEMPLATE_CONFIGS[templateName] || TEMPLATE_CONFIGS['professional'];
+  const sectionOrder = customSectionOrder || getDefaultSectionOrder(templateName);
 
   const generators: Record<string, (cv: CV) => string> = {
-    'header': generateHeader,
     'summary': generateSummary,
     'experience': generateExperience,
     'education': generateEducation,
@@ -481,8 +424,9 @@ export function generateLaTeX(cv: CV, options: Partial<LaTeXExportOptions> = {})
   };
 
   const sections = [
-    generatePreamble(opts),
-    ...sectionOrder.map(section => generators[section](cv)),
+    generatePreamble(),
+    generateHeader(cv),
+    ...sectionOrder.map(section => generators[section]?.(cv) || '').filter(Boolean),
     '\n\\end{document}\n',
   ];
 
@@ -492,8 +436,8 @@ export function generateLaTeX(cv: CV, options: Partial<LaTeXExportOptions> = {})
 /**
  * Generates a preview of the LaTeX code (first 50 lines)
  */
-export function generateLaTeXPreview(cv: CV, options: Partial<LaTeXExportOptions> = {}): string {
-  const full = generateLaTeX(cv, options);
+export function generateLaTeXPreview(cv: CV, options: Partial<LaTeXExportOptions> = {}, sectionOrder?: ResumeSection[]): string {
+  const full = generateLaTeX(cv, options, sectionOrder);
   const lines = full.split('\n');
   return lines.slice(0, 50).join('\n') + '\n% ... (truncated for preview)';
 }
@@ -501,8 +445,8 @@ export function generateLaTeXPreview(cv: CV, options: Partial<LaTeXExportOptions
 /**
  * Downloads the LaTeX code as a .tex file
  */
-export function downloadLaTeX(cv: CV, filename?: string, options: Partial<LaTeXExportOptions> = {}): void {
-  const latex = generateLaTeX(cv, options);
+export function downloadLaTeX(cv: CV, filename?: string, options: Partial<LaTeXExportOptions> = {}, sectionOrder?: ResumeSection[]): void {
+  const latex = generateLaTeX(cv, options, sectionOrder);
   const blob = new Blob([latex], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -554,6 +498,536 @@ export function validateLaTeX(latex: string): { valid: boolean; errors: string[]
     valid: errors.length === 0,
     errors,
   };
+}
+
+// ============================================
+// ATS CV GENERATOR - Multi-page comprehensive format
+// Based on proven 92+ ATS score template
+// ============================================
+
+function generateATSCVPreamble(): string {
+  return `\\documentclass[11pt]{article}
+\\usepackage[margin=0.6in]{geometry}
+\\usepackage{enumitem}
+\\usepackage{hyperref}
+\\usepackage{titlesec}
+\\usepackage{tabularx}
+
+\\setlist[itemize]{leftmargin=*, noitemsep, topsep=3pt, parsep=1pt}
+\\pagestyle{empty}
+\\setlength{\\parindent}{0pt}
+\\setlength{\\parskip}{2pt}
+\\titlespacing{\\section}{0pt}{10pt}{5pt}
+\\titleformat{\\section}{\\large\\bfseries\\scshape}{}{0pt}{}[\\titlerule]
+\\hypersetup{colorlinks=true, linkcolor=blue!70!black, urlcolor=blue!70!black}
+
+\\begin{document}
+`;
+}
+
+function generateATSCVHeader(cv: CV): string {
+  const { personal_info } = cv;
+
+  const contactLine: string[] = [];
+  if (personal_info.phone) contactLine.push(escapeLatex(personal_info.phone));
+  if (personal_info.email) contactLine.push(`\\href{mailto:${personal_info.email}}{${escapeLatex(personal_info.email)}}`);
+  if (personal_info.linkedin_url) {
+    const display = personal_info.linkedin_url.replace(/^https?:\/\/(www\.)?/, '');
+    contactLine.push(`\\href{${personal_info.linkedin_url}}{${escapeLatex(display)}}`);
+  }
+
+  const socialLine: string[] = [];
+  if (personal_info.github_url) {
+    const display = personal_info.github_url.replace(/^https?:\/\/(www\.)?/, '');
+    socialLine.push(`\\href{${personal_info.github_url}}{${escapeLatex(display)}}`);
+  }
+  if (personal_info.portfolio_url) {
+    const display = personal_info.portfolio_url.replace(/^https?:\/\/(www\.)?/, '');
+    socialLine.push(`\\href{${personal_info.portfolio_url}}{${escapeLatex(display)}}`);
+  }
+
+  let header = `
+\\begin{center}
+{\\LARGE \\textbf{${escapeLatex(personal_info.full_name).toUpperCase()}}} \\\\[6pt]
+{\\normalsize
+${contactLine.join(' \\quad $|$ \\quad ')}
+}`;
+
+  if (socialLine.length > 0) {
+    header += `\\\\[2pt]
+{\\normalsize
+${socialLine.join(' \\quad $|$ \\quad ')}
+}`;
+  }
+
+  header += `
+\\end{center}
+
+\\vspace{2pt}
+`;
+  return header;
+}
+
+function generateATSCVSummary(cv: CV): string {
+  if (!cv.personal_info.summary) return '';
+  return `
+\\section*{Professional Summary}
+
+${escapeLatex(cv.personal_info.summary)}
+`;
+}
+
+function generateATSCVEducation(cv: CV): string {
+  if (!cv.education || cv.education.length === 0) return '';
+
+  const entries = cv.education.map(edu => {
+    const dateRange = formatDateRange(edu.start_date, edu.end_date, false);
+    const degree = edu.field_of_study
+      ? `${escapeLatex(edu.degree)} in ${escapeLatex(edu.field_of_study)}`
+      : escapeLatex(edu.degree);
+
+    let entry = `\\textbf{${degree}} \\hfill ${dateRange} \\\\
+${escapeLatex(edu.institution)}${edu.location ? `, ${escapeLatex(edu.location)}` : ''}`;
+
+    if (edu.gpa) {
+      entry += ` \\hfill \\textbf{GPA: ${escapeLatex(edu.gpa)}}`;
+    }
+
+    const items: string[] = [];
+    if (edu.description) items.push(edu.description);
+    if (edu.achievements && edu.achievements.length > 0) {
+      items.push(...edu.achievements);
+    }
+    if (items.length > 0) {
+      entry += `
+\\begin{itemize}
+${items.map(a => `\\item ${escapeLatex(a)}`).join('\n')}
+\\end{itemize}`;
+    }
+
+    return entry;
+  }).join('\n\n');
+
+  return `
+\\section*{Education}
+
+${entries}
+`;
+}
+
+function generateATSCVSkills(cv: CV): string {
+  if (!cv.skills || cv.skills.length === 0) return '';
+
+  const skillsByCategory = cv.skills.reduce((acc, skill) => {
+    const category = skill.category || 'Other';
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(skill.name);
+    return acc;
+  }, {} as Record<string, string[]>);
+
+  const rows = Object.entries(skillsByCategory)
+    .map(([category, skills]) =>
+      `\\textbf{${escapeLatex(category)}} & ${skills.map(escapeLatex).join(', ')} \\\\[3pt]`
+    )
+    .join('\n');
+
+  return `
+\\section*{Technical Skills}
+
+\\begin{tabularx}{\\textwidth}{@{}l X@{}}
+${rows}
+\\end{tabularx}
+`;
+}
+
+function generateATSCVExperience(cv: CV): string {
+  if (!cv.experience || cv.experience.length === 0) return '';
+
+  const entries = cv.experience.map(exp => {
+    const dateRange = formatDateRange(exp.start_date, exp.end_date, exp.current);
+
+    let entry = `\\textbf{${escapeLatex(exp.title)}} \\hfill \\textit{${dateRange}} \\\\
+\\textit{${escapeLatex(exp.company)}${exp.location ? `, ${escapeLatex(exp.location)}` : ''}}`;
+
+    if (exp.achievements && exp.achievements.length > 0) {
+      entry += `
+\\begin{itemize}
+${exp.achievements.map(a => `\\item ${escapeLatex(a)}`).join('\n')}
+\\end{itemize}`;
+    } else if (exp.description) {
+      entry += `
+\\begin{itemize}
+\\item ${escapeLatex(exp.description)}
+\\end{itemize}`;
+    }
+
+    return entry;
+  }).join('\n\n');
+
+  return `
+\\section*{Work Experience}
+
+${entries}
+`;
+}
+
+function generateATSCVProjects(cv: CV): string {
+  if (!cv.projects || cv.projects.length === 0) return '';
+
+  const entries = cv.projects.map(project => {
+    const techStack = project.technologies.length > 0
+      ? project.technologies.map(escapeLatex).join(', ')
+      : '';
+    const dateRange = project.start_date
+      ? formatDateRange(project.start_date, project.end_date || '', false)
+      : '';
+
+    let entry = `\\textbf{${escapeLatex(project.name)}}`;
+    if (dateRange) entry += ` \\hfill \\textit{${dateRange}}`;
+    entry += ` \\\\`;
+    if (techStack) entry += `\n\\textit{${techStack}}`;
+
+    const links: string[] = [];
+    if (project.url) links.push(`\\href{${project.url}}{Website}`);
+    if (project.github_url) links.push(`\\href{${project.github_url}}{GitHub}`);
+    if (links.length > 0) entry += ` \\hfill ${links.join(' $|$ ')}`;
+
+    if (project.highlights && project.highlights.length > 0) {
+      entry += `
+\\begin{itemize}
+${project.highlights.map(h => `\\item ${escapeLatex(h)}`).join('\n')}
+\\end{itemize}`;
+    } else if (project.description) {
+      entry += `
+\\begin{itemize}
+\\item ${escapeLatex(project.description)}
+\\end{itemize}`;
+    }
+
+    return entry;
+  }).join('\n\n');
+
+  return `
+\\section*{Projects}
+
+${entries}
+`;
+}
+
+function generateATSCVCertifications(cv: CV): string {
+  if (!cv.certifications || cv.certifications.length === 0) return '';
+
+  const entries = cv.certifications.map(cert => {
+    const certName = cert.url
+      ? `\\href{${cert.url}}{${escapeLatex(cert.name)}}`
+      : escapeLatex(cert.name);
+    let line = `\\textbf{${escapeLatex(cert.issuer)}} -- ${certName}`;
+    if (cert.date) line += ` \\hfill ${cert.date}`;
+    return line;
+  }).join(' \\\\\n');
+
+  return `
+\\section*{Certifications}
+
+${entries}
+`;
+}
+
+function generateATSCVLanguages(cv: CV): string {
+  if (!cv.languages || cv.languages.length === 0) return '';
+
+  const langList = cv.languages
+    .map(lang => `${escapeLatex(lang.name)} (${escapeLatex(lang.proficiency)})`)
+    .join(' \\quad $|$ \\quad ');
+
+  return `
+\\section*{Languages}
+${langList}
+`;
+}
+
+/**
+ * Generate ATS-optimized CV LaTeX (multi-page, comprehensive)
+ * Based on a template that scores 92+ on ATS systems
+ */
+export function generateATSCVLaTeX(cv: CV, sectionOrder?: ResumeSection[]): string {
+  const order = sectionOrder || ['summary', 'education', 'skills', 'experience', 'projects', 'certifications', 'languages'];
+
+  const generators: Record<string, (cv: CV) => string> = {
+    'summary': generateATSCVSummary,
+    'experience': generateATSCVExperience,
+    'education': generateATSCVEducation,
+    'skills': generateATSCVSkills,
+    'projects': generateATSCVProjects,
+    'certifications': generateATSCVCertifications,
+    'languages': generateATSCVLanguages,
+  };
+
+  const sections = [
+    generateATSCVPreamble(),
+    generateATSCVHeader(cv),
+    ...order.map(section => generators[section]?.(cv) || '').filter(Boolean),
+    '\n\\end{document}\n',
+  ];
+
+  return sections.join('');
+}
+
+// ============================================
+// ATS RESUME GENERATOR - Single-page compact format
+// Tight spacing, role-focused, no icons
+// ============================================
+
+function generateATSResumePreamble(): string {
+  return `\\documentclass[10pt]{article}
+\\usepackage[margin=0.5in]{geometry}
+\\usepackage{enumitem}
+\\usepackage{hyperref}
+\\usepackage{titlesec}
+\\setlist[itemize]{leftmargin=*, noitemsep, topsep=2pt, parsep=0pt}
+\\pagestyle{empty}
+\\setlength{\\parindent}{0pt}
+\\setlength{\\parskip}{0pt}
+\\titlespacing{\\section}{0pt}{6pt}{3pt}
+\\hypersetup{hidelinks}
+
+\\begin{document}
+`;
+}
+
+function generateATSResumeHeader(cv: CV): string {
+  const { personal_info } = cv;
+  const contactParts: string[] = [];
+
+  if (personal_info.phone) contactParts.push(escapeLatex(personal_info.phone));
+  if (personal_info.email) contactParts.push(escapeLatex(personal_info.email));
+  if (personal_info.linkedin_url) {
+    const display = personal_info.linkedin_url.replace(/^https?:\/\/(www\.)?/, '');
+    contactParts.push(`\\href{${personal_info.linkedin_url}}{${escapeLatex(display)}}`);
+  }
+  if (personal_info.github_url) {
+    const display = personal_info.github_url.replace(/^https?:\/\/(www\.)?/, '');
+    contactParts.push(`\\href{${personal_info.github_url}}{${escapeLatex(display)}}`);
+  }
+  if (personal_info.portfolio_url) {
+    const display = personal_info.portfolio_url.replace(/^https?:\/\/(www\.)?/, '');
+    contactParts.push(`\\href{${personal_info.portfolio_url}}{${escapeLatex(display)}}`);
+  }
+
+  return `
+\\begin{center}
+{\\Large \\textbf{${escapeLatex(personal_info.full_name).toUpperCase()}}} \\\\[2pt]
+{\\small ${contactParts.join(' \\;|\\; ')}}
+\\end{center}
+
+\\noindent\\rule{\\textwidth}{0.4pt}
+`;
+}
+
+function generateATSResumeSummary(cv: CV): string {
+  if (!cv.personal_info.summary) return '';
+  return `
+\\section*{SUMMARY}
+${escapeLatex(cv.personal_info.summary)}
+`;
+}
+
+function generateATSResumeSkills(cv: CV): string {
+  if (!cv.skills || cv.skills.length === 0) return '';
+
+  const skillsByCategory = cv.skills.reduce((acc, skill) => {
+    const category = skill.category || 'Other';
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(skill.name);
+    return acc;
+  }, {} as Record<string, string[]>);
+
+  const skillLines = Object.entries(skillsByCategory)
+    .map(([category, skills]) =>
+      `\\textbf{${escapeLatex(category)}:} ${skills.map(escapeLatex).join(', ')}`
+    )
+    .join(' \\\\\n');
+
+  return `
+\\section*{CORE SKILLS}
+${skillLines}
+`;
+}
+
+function generateATSResumeExperience(cv: CV): string {
+  if (!cv.experience || cv.experience.length === 0) return '';
+
+  const entries = cv.experience.map(exp => {
+    const dateRange = formatDateRange(exp.start_date, exp.end_date, exp.current);
+    let entry = `\\textbf{${escapeLatex(exp.title)} -- ${escapeLatex(exp.company)}} \\hfill ${dateRange}`;
+    if (exp.location) entry += ` \\\\\n${escapeLatex(exp.location)}`;
+
+    if (exp.achievements && exp.achievements.length > 0) {
+      entry += `
+\\begin{itemize}
+${exp.achievements.map(a => `\\item ${escapeLatex(a)}`).join('\n')}
+\\end{itemize}`;
+    } else if (exp.description) {
+      entry += `
+\\begin{itemize}
+\\item ${escapeLatex(exp.description)}
+\\end{itemize}`;
+    }
+
+    return entry;
+  }).join('\n\n');
+
+  return `
+\\section*{EXPERIENCE}
+${entries}
+`;
+}
+
+function generateATSResumeProjects(cv: CV): string {
+  if (!cv.projects || cv.projects.length === 0) return '';
+
+  const entries = cv.projects.map(project => {
+    const techStack = project.technologies.length > 0
+      ? project.technologies.map(escapeLatex).join(', ')
+      : '';
+
+    let entry = `\\textbf{${escapeLatex(project.name)}}`;
+    if (techStack) entry += ` \\\\\n\\textit{${techStack}}`;
+
+    const links: string[] = [];
+    if (project.url) links.push(`\\href{${project.url}}{Website}`);
+    if (project.github_url) links.push(`\\href{${project.github_url}}{GitHub}`);
+    if (links.length > 0) entry += ` \\;|\\;\n${links.join(' $|$ ')}`;
+
+    if (project.highlights && project.highlights.length > 0) {
+      entry += `
+\\begin{itemize}
+${project.highlights.map(h => `\\item ${escapeLatex(h)}`).join('\n')}
+\\end{itemize}`;
+    } else if (project.description) {
+      entry += `
+\\begin{itemize}
+\\item ${escapeLatex(project.description)}
+\\end{itemize}`;
+    }
+
+    return entry;
+  }).join('\n\n');
+
+  return `
+\\section*{PROJECTS}
+${entries}
+`;
+}
+
+function generateATSResumeEducation(cv: CV): string {
+  if (!cv.education || cv.education.length === 0) return '';
+
+  const entries = cv.education.map(edu => {
+    const degree = edu.field_of_study
+      ? `${escapeLatex(edu.degree)} in ${escapeLatex(edu.field_of_study)}`
+      : escapeLatex(edu.degree);
+
+    let entry = `\\textbf{${degree}} \\hfill Expected ${edu.end_date?.split('-')[0] || ''} \\\\
+${escapeLatex(edu.institution)}${edu.location ? `, ${escapeLatex(edu.location)}` : ''}`;
+
+    if (edu.gpa) entry += ` \\hfill GPA: ${escapeLatex(edu.gpa)}`;
+
+    return entry;
+  }).join('\n\n');
+
+  return `
+\\section*{EDUCATION}
+${entries}
+`;
+}
+
+function generateATSResumeCertifications(cv: CV): string {
+  if (!cv.certifications || cv.certifications.length === 0) return '';
+
+  const entries = cv.certifications.map(cert => {
+    const certName = cert.url
+      ? `\\href{${cert.url}}{${escapeLatex(cert.name)}}`
+      : escapeLatex(cert.name);
+    return `${certName} -- ${escapeLatex(cert.issuer)}${cert.date ? ` (${cert.date})` : ''}`;
+  }).join(' \\\\\n');
+
+  return `
+\\section*{CERTIFICATIONS}
+${entries}
+`;
+}
+
+function generateATSResumeLanguages(cv: CV): string {
+  if (!cv.languages || cv.languages.length === 0) return '';
+
+  const langList = cv.languages
+    .map(lang => `${escapeLatex(lang.name)} (${escapeLatex(lang.proficiency)})`)
+    .join(', ');
+
+  return `
+\\section*{LANGUAGES}
+${langList}
+`;
+}
+
+/**
+ * Generate ATS-optimized Resume LaTeX (single-page, compact)
+ * Tight spacing, role-focused layout
+ */
+export function generateATSResumeLaTeX(cv: CV, sectionOrder?: ResumeSection[]): string {
+  const order = sectionOrder || getDefaultSectionOrder(cv.template || cv.target_role || 'professional');
+
+  const generators: Record<string, (cv: CV) => string> = {
+    'summary': generateATSResumeSummary,
+    'experience': generateATSResumeExperience,
+    'education': generateATSResumeEducation,
+    'skills': generateATSResumeSkills,
+    'projects': generateATSResumeProjects,
+    'certifications': generateATSResumeCertifications,
+    'languages': generateATSResumeLanguages,
+  };
+
+  const sections = [
+    generateATSResumePreamble(),
+    generateATSResumeHeader(cv),
+    ...order.map(section => generators[section]?.(cv) || '').filter(Boolean),
+    '\n\\end{document}\n',
+  ];
+
+  return sections.join('');
+}
+
+/**
+ * Downloads ATS CV LaTeX as .tex file
+ */
+export function downloadATSCVLaTeX(cv: CV, filename?: string): void {
+  const latex = generateATSCVLaTeX(cv);
+  const blob = new Blob([latex], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename || `${cv.personal_info.full_name.replace(/\s+/g, '_')}_ATS_CV.tex`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Downloads ATS Resume LaTeX as .tex file
+ */
+export function downloadATSResumeLaTeX(cv: CV, filename?: string): void {
+  const latex = generateATSResumeLaTeX(cv);
+  const blob = new Blob([latex], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename || `${cv.personal_info.full_name.replace(/\s+/g, '_')}_ATS_Resume.tex`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 /**

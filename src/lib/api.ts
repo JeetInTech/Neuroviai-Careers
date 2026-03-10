@@ -429,6 +429,30 @@ class ApiClient {
     
     return response.blob();
   }
+
+  // LaTeX Compilation endpoint - compiles LaTeX source to PDF
+  async compileLaTeX(latexSource: string, filename?: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}/document/compile-latex`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.accessToken && { 'Authorization': `Bearer ${this.accessToken}` }),
+      },
+      body: JSON.stringify({ latex_source: latexSource, filename }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'LaTeX compilation failed');
+    }
+    
+    return response.blob();
+  }
+
+  // Check LaTeX compiler availability
+  async checkLatexStatus(): Promise<{ available: boolean; path: string | null; message: string }> {
+    return this.request('/document/latex-status');
+  }
 }
 
 export const api = new ApiClient(API_URL);

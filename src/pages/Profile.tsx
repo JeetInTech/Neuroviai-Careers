@@ -507,10 +507,10 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* My Resumes Section */}
+        {/* ATS Resumes Section */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900">My Resumes</h3>
+            <h3 className="text-base font-semibold text-gray-900">ATS Resumes</h3>
             <Link
               to="/portfolio"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700"

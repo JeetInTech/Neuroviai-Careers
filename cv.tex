@@ -1,0 +1,229 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.6in]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{fontawesome5}
+\usepackage{tabularx}
+
+\setlist[itemize]{leftmargin=*, noitemsep, topsep=3pt, parsep=1pt}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\titlespacing{\section}{0pt}{10pt}{5pt}
+\titleformat{\section}{\large\bfseries\scshape}{}{0pt}{}[\titlerule]
+\hypersetup{colorlinks=true, linkcolor=blue!70!black, urlcolor=blue!70!black}
+
+\begin{document}
+
+% ===== HEADER =====
+\begin{center}
+{\LARGE \textbf{SANGRAMJEET GHOSH}} \\[6pt]
+{\normalsize
+\faPhone\ +91 9059150937 \quad $|$ \quad
+\faEnvelope\ \href{mailto:sangramjeet47@gmail.com}{sangramjeet47@gmail.com} \quad $|$ \quad
+\faLinkedin\ \href{https://www.linkedin.com/in/sangramjeetghosh}{linkedin.com/in/sangramjeetghosh}
+}\\[2pt]
+{\normalsize
+\faGithub\ \href{https://github.com/JeetInTech}{github.com/JeetInTech} \quad $|$ \quad
+\faGlobe\ \href{https://neuroviai.com}{neuroviai.com} \quad $|$ \quad
+\faFolder\ \href{https://drive.google.com/drive/folders/1ZQd-DeX-rXlEVDTwDJfjLjnG7iPc_fEw}{Certificates Portfolio}
+}
+\end{center}
+
+\vspace{2pt}
+
+% ===== PROFESSIONAL SUMMARY =====
+\section*{Professional Summary}
+
+Versatile AI \& Full-Stack Engineer with hands-on experience building and shipping production-grade SaaS applications, intelligent automation systems, and data-driven products. Designed and launched Neuroviai—a live AI-powered content-automation SaaS with multi-provider LLM orchestration, payment processing, and social-media API integrations. Applied AI researcher specializing in constraint-driven system design with a strong foundation in machine learning, distributed systems, and modern web architectures. Proven ability to take products from concept to deployment across cloud platforms (AWS, Render, Supabase, Vercel). Actively seeking opportunities to build impactful technology at scale.
+
+% ===== EDUCATION =====
+\section*{Education}
+
+\textbf{Bachelor of Technology (B.Tech) in Computer Science and Engineering} \hfill Expected June 2026 \\
+Specialization in Artificial Intelligence and Machine Learning \\
+Malla Reddy University, Hyderabad, Telangana \hfill \textbf{GPA: 8.0 / 10.0}
+
+
+\begin{itemize}
+\item \textbf{Relevant Coursework:} Data Structures \& Algorithms, Machine Learning, Deep Learning, Natural Language Processing, Computer Vision, Database Management Systems, Cloud Computing, Software Engineering, Statistics \& Probability
+\item \textbf{Academic Focus:} AI/ML system design, applied NLP, full-stack application development
+\end{itemize}
+
+% ===== TECHNICAL SKILLS =====
+\section*{Technical Skills}
+
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\textbf{Languages} & Python, JavaScript, TypeScript, SQL, HTML5, CSS3, Bash \\[3pt]
+\textbf{AI / ML} & LangChain, LangGraph, Transformers (Hugging Face), Scikit-learn, Pandas, NumPy, Matplotlib, OpenAI API, Google Gemini API, RAG Pipelines, Vector Embeddings, Prompt Engineering \\[3pt]
+\textbf{Backend} & FastAPI, REST APIs, JWT / OAuth 2.0, Webhook Handlers, Microservices Architecture \\[3pt]
+\textbf{Frontend} & React 18, Next.js 14 (App Router), Tailwind CSS, Zustand, ShadCN/UI, Responsive Design \\[3pt]
+\textbf{Databases} & PostgreSQL, Supabase, MongoDB (basics), SQLAlchemy ORM \\[3pt]
+\textbf{DevOps / Cloud} & AWS (EC2, S3, IAM), Docker, Docker Compose, GitHub Actions CI/CD, Render, Vercel, Netlify, Nginx \\[3pt]
+\textbf{Tools} & Git, GitHub, Postman, VS Code \\
+\end{tabularx}
+
+% ===== WORK EXPERIENCE =====
+\section*{Work Experience}
+
+\textbf{Data Science Intern} \hfill \textit{Mar 2025} \\
+\textit{Inikola Technologies, Hyderabad}
+\begin{itemize}
+\item Developing AI-powered backend features for \textbf{CraftingBrain} (\href{https://craftingbrain.com}{craftingbrain.com}), a live content-technology platform, using Python and FastAPI.
+\item Building and deploying NLP pipelines for real-time text analysis, sentiment scoring, topic extraction, and content optimization in production environments.
+\item Managing cloud infrastructure on AWS: EC2 instance provisioning, S3 bucket policies, IAM role configuration, and Nginx reverse-proxy setup.
+\item Containerized Python services using multi-stage Docker builds, reducing image size and cold-start latency.
+\item Authored CI/CD pipelines with GitHub Actions automating linting, testing, and zero-downtime production deployments.
+\item Wrote internal documentation covering deployment procedures, troubleshooting runbooks, and architecture decision records.
+\end{itemize}
+
+\textbf{Freelance Full-Stack \& AI Developer} \hfill \textit{Aug 2025 -- Present} \\
+\textit{Remote}
+\begin{itemize}
+\item Delivered end-to-end web applications and AI-powered MVPs for 3+ startup founders, handling requirements gathering, architecture design, development, deployment, and post-launch iteration.
+\item Built SaaS products with subscription billing (Razorpay), role-based access control (JWT/OAuth), and multi-platform API integrations.
+\item Deployed client applications across AWS, Render, Vercel, and Netlify with custom domains, SSL certificates, and CDN configuration.
+\item Created integration guides and handoff documentation enabling clients' in-house teams to maintain and extend delivered products.
+\item Managed LLM provider costs through intelligent quota splitting, response caching, and request batching strategies.
+\end{itemize}
+
+% ===== PROJECTS =====
+\section*{Projects}
+
+\textbf{Neuroviai -- AI-Powered Social Media Automation SaaS} \hfill \textit{Mar 2025 -- Present} \\
+\textit{Next.js 14, FastAPI, PostgreSQL, Supabase, Gemini, OpenAI, Razorpay, Docker} \hfill \href{https://neuroviai.com}{\faGlobe\ neuroviai.com}
+\begin{itemize}
+\item Designed and built a full-stack AI SaaS platform from scratch---covering product design, database schema, API architecture, AI pipelines, payment integration, and multi-platform publishing.
+\item Architected multi-model LLM cascade: Gemini as primary provider $\rightarrow$ OpenAI fallback $\rightarrow$ structured JSON validation layer ensuring consistent output quality.
+\item Built AI content pipeline: text generation with 15+ prompt templates, image generation for social-media visuals, quality-scoring heuristic for auto-flagging low-confidence outputs.
+\item Integrated 8 external APIs (LinkedIn Publishing, Twitter/X, Gemini, OpenAI, Razorpay, Supabase Auth, and others) with OAuth flows, webhook listeners, error handling, and rate-limit management.
+\item Designed token-economy billing: per-user credit tracking, usage alerts, low-balance upsell triggers, and plan-upgrade flows.
+\item Built engagement analytics dashboard with content performance metrics, publishing history, and optimal-posting-time recommendations.
+\item Deployed as 4 microservices across Render (compute), Supabase (database), Netlify (CDN), and AWS S3 (assets) with GitHub Actions CI/CD.
+\end{itemize}
+
+\textbf{Neurovia Career -- AI-Powered ATS Resume Builder} \hfill \textit{Nov 2025} \\
+\textit{React, TypeScript, Python, FastAPI, Supabase} \hfill \href{https://github.com/JeetInTech/CvForge-Online}{\faGithub\ GitHub}
+\begin{itemize}
+\item Built a full-stack resume builder that generates ATS-friendly resumes with real-time scoring and optimization targeting 90\%+ ATS compatibility.
+\item Engineered a weighted ATS scoring engine evaluating keyword match (40\%), content completeness (35\%), and formatting quality (25\%) with role-specific keyword databases across 15+ job categories.
+\item Implemented AI-assisted resume generation using Groq LLM API for summaries, experience bullet points, and skill suggestions with LinkedIn profile import support.
+\item Developed a custom \LaTeX{} export system with multiple professional templates enabling clean PDF generation and configurable formatting.
+\end{itemize}
+
+\textbf{Virtual Therapist -- LangGraph Agentic AI System} \hfill \textit{Sep -- Oct 2025} \\
+\textit{LangGraph, LangChain, Python, Speech-to-Text} \hfill \href{https://github.com/JeetInTech/Virtual-Therapist---LangGraph-Agentic-AI-System}{\faGithub\ GitHub}
+\begin{itemize}
+\item Designed and implemented a 3-agent LangGraph system: intake agent, emotion-detection agent, and therapeutic-response generator with state-based handoff.
+\item Integrated speech-to-text input processing and adaptive LLM responses tuned to detected emotional context and conversation history.
+\item Authored developer documentation: LangGraph agent patterns, prompt templates, state-transition diagrams, and deployment instructions.
+\item Containerized with Docker Compose: service dependencies, shared volumes, network isolation, and environment configuration.
+\end{itemize}
+
+\textbf{IntelliSense Analytics -- Automated Data Analysis Engine} \hfill \textit{Apr -- Jun 2025} \\
+\textit{Python, Pandas, Scikit-learn, Matplotlib}
+\begin{itemize}
+\item Built an automated analytics pipeline that ingests heterogeneous datasets, performs cleaning, feature engineering, trend extraction, and generates visual reports.
+\item Implemented statistical forecasting and anomaly detection modules for time-series and tabular data.
+\item Designed interactive visualizations and exportable PDF/CSV reports for business stakeholders.
+\end{itemize}
+
+\textbf{NeuroviaI -- Multi-Agent AI Data Analytics Platform} \hfill \textit{2025 -- Present} \\
+\textit{Python, PySide6, LLM Agents, Scikit-learn, XGBoost, LightGBM}
+\begin{itemize}
+\item Developed a desktop AI analytics platform using a multi-agent LLM system that profiles, cleans, engineers features, trains models, and generates automated insights from datasets.
+\item Designed a think $\rightarrow$ act $\rightarrow$ observe agent architecture with specialized agents for profiling, cleaning, feature engineering, model selection, and visualization coordinated by an orchestration layer.
+\item Implemented ML model benchmarking across 11 algorithms including Random Forest, XGBoost, LightGBM, and SVM with cross-validation and feature importance analysis.
+\item Built an interactive PySide6 desktop interface for dataset exploration, AI agent interaction, and automated generation of both 2D and 3D data visualizations with exportable reports.
+\end{itemize}
+
+\textbf{Sebastian -- Personal Autonomous AI Assistant} \hfill \textit{2026} \\
+\textit{Python, FastAPI, PostgreSQL, Gemini API, Groq, Playwright, Whisper, Edge TTS}
+\begin{itemize}
+\item Built a personal AI assistant capable of executing real-world tasks through tool-based reasoning and automation.
+\item Designed persistent memory and context awareness using PostgreSQL with vector retrieval and long-term knowledge storage.
+\item Implemented a modular tool architecture enabling task execution such as scheduling, note-taking, system control, and browser automation.
+\end{itemize}
+
+% ===== PUBLICATIONS =====
+\section*{Publications \& Research}
+
+\textbf{Design and Implementation of a Cost-Constrained Multi-Platform AI Automation System} | \textit{Manuscript in Preparation} \\
+Independent Researcher (Case Study on \textbf{Neuroviai}) [cite: 2854, 2855]
+\begin{itemize}
+    \item Engineered a deterministic \textbf{four-tier AI fallback strategy} (Gemini, GROQ, HuggingFace) achieving 99.7\% text generation reliability through provider-level redundancy[cite: 2862, 3141].
+    \item Documented \textbf{orchestration-free microservice patterns} to maximize free-tier resource allocations across ten independent server processes[cite: 2859, 3110].
+    \item Formalized \textbf{23 distinct engineering trade-offs} regarding cold-start mitigation, ephemeral storage, and security in zero-budget environments[cite: 2894].
+\end{itemize}
+
+\textbf{B.Tech Thesis} | \textit{Malla Reddy University} \\
+\textit{Design and Implementation of Cost-Constrained AI Automation Systems} (Feb 2026) 
+\begin{itemize}
+    \item Developed a full-stack SaaS platform (Neuroviai) documented through 15,000+ lines of Python and 12,000+ lines of TypeScript[cite: 3104].
+    \item Implemented regulatory-aligned data stewardship practices in accordance with \textbf{India’s DPDPA (2023)} and the \textbf{EU AI Act}[cite: 3587, 3603, 3607].
+\end{itemize}
+
+% ===== ACHIEVEMENTS & COMPETITIONS =====
+\section*{Achievements \& Competitions}
+\begin{itemize}
+\item \textbf{Winner -- IDEATHON 2.0} (University-level Ideation Competition): Developed and presented a high-impact AI solution evaluated by industry experts for technical execution, feasibility, and market potential.
+\item \textbf{Participant -- METALLOOP 2K23} (National-level Hackathon): Developed and demonstrated a functional prototype under intensive time constraints during a multi-round technical competition; received official certification for technical execution.
+\item \textbf{Independent AI Researcher}: Authored a comprehensive engineering case study on multi-platform AI automation systems, currently in preparation for IEEE conference submission[cite: 2854, 3730].
+\begin{itemize}
+    \item Developed a deterministic \textbf{four-tier AI fallback strategy} achieving 99.7\% text generation reliability using Gemini, GROQ, and HuggingFace[cite: 2862, 2893].
+    \item Formalized \textbf{orchestration-free microservice patterns} to manage ten independent server processes on zero-cost infrastructure[cite: 2859, 2863].
+\end{itemize}
+
+% \newpage % Moves the following content to the next page
+
+\item \textbf{Self-Published Author | Amazon KDP}
+\begin{itemize}
+    \item Authored \textit{"The Future of Touchless Technology"} using an experimental LLM-assisted workflow (Gemini and Perplexity AI) to investigate long-form narrative consistency and technical accuracy.
+    \item Managed the end-to-end digital publishing lifecycle, including automated manuscript formatting and global distribution.
+    \item \textbf{Proof of Work:} \href{https://www.amazon.com/dp/B0FBLC1RLT}{amazon.com/dp/B0FBLC1RLT}
+\end{itemize}
+\end{itemize}
+
+% ===== CERTIFICATIONS =====
+\section*{Certifications}
+\textit{All certificates are verified and available at:} \href{https://drive.google.com/drive/folders/1ZQd-DeX-rXlEVDTwDJfjLjnG7iPc_fEw}{\textbf{Certificate Portfolio (Google Drive)}}
+
+\begin{itemize}
+\item \textbf{Amazon Web Services (AWS)} -- Cloud Practitioner Essentials / Foundations
+\item \textbf{Google Cloud} -- Cloud Computing Fundamentals
+\item \textbf{Coursera} -- Machine Learning Specialization / AI \& Data Science tracks
+\item \textbf{Microsoft Learn} -- Azure AI Fundamentals / Developer certifications
+\item \textbf{NPTEL} -- Programming and Data Science courses (IIT-certified)
+\end{itemize}
+
+% ===== EXTRACURRICULAR =====
+\section*{Extracurricular \& Leadership}
+\begin{itemize}
+\item \textbf{Open-Source Contributor:} Actively maintain public repositories on GitHub (\href{https://github.com/JeetInTech}{github.com/JeetInTech}) with multiple AI, web, and data projects.
+\item \textbf{Technical Mentor:} Guide junior students in AI/ML concepts, project development, and hackathon preparation.
+\item \textbf{Hackathon Participant:} Regular competitor in national-level hackathons and ideathons; strong track record of building functional prototypes under 24--48 hour deadlines.
+\item \textbf{Freelance Consultant:} Advise early-stage startup founders on technology stack selection, architecture design, and MVP scoping.
+\end{itemize}
+
+% ===== LANGUAGES =====
+\section*{Languages}
+English (Professional Proficiency) \quad $|$ \quad Hindi (Native) \quad $|$ \quad Bengali (Native)
+
+% ===== LINKS =====
+\section*{Online Profiles \& Portfolio}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\textbf{Portfolio} & \href{https://www.sangramjeet.me}{sangramjeet.me} \\
+\textbf{SaaS / AI Automation} & \href{https://neuroviai.com}{neuroviai.com} \\
+\textbf{GitHub} & \href{https://github.com/JeetInTech}{github.com/JeetInTech} \\
+\textbf{LinkedIn} & \href{https://www.linkedin.com/in/sangramjeetghosh}{linkedin.com/in/sangramjeetghosh} \\
+\textbf{Certificates} & \href{https://drive.google.com/drive/folders/1ZQd-DeX-rXlEVDTwDJfjLjnG7iPc_fEw}{Google Drive -- Certificate Portfolio} \\
+\end{tabularx}
+
+\vfill
+\begin{center}
+\small\textit{References available upon request.}
+\end{center}
+
+\end{document}

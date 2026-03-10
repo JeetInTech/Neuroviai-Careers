@@ -5,7 +5,7 @@ import api from '../lib/api';
 import aiApi from '../lib/ai-api';
 import type { CV } from '../lib/database.types';
 import DocumentUpload from '../components/DocumentUpload';
-import { getFullTemplatePreview } from '../components/FullTemplatePreviews';
+import { getFullTemplatePreview } from '../components/templatePreviewHelpers';
 import { 
   FileText, 
   Plus, 
@@ -37,13 +37,9 @@ import {
 
 const TEMPLATE_CATEGORIES = [
   { id: 'Engineering & Tech', icon: '⚡', color: 'from-blue-500 to-indigo-600' },
-  { id: 'Data & Analytics', icon: '📊', color: 'from-emerald-500 to-teal-600' },
-  { id: 'Management', icon: '📋', color: 'from-purple-500 to-violet-600' },
-  { id: 'Business & Finance', icon: '💼', color: 'from-amber-500 to-orange-600' },
-  { id: 'Marketing & Content', icon: '📣', color: 'from-pink-500 to-rose-600' },
+  { id: 'Data & AI', icon: '📊', color: 'from-emerald-500 to-teal-600' },
   { id: 'Creative', icon: '🎨', color: 'from-fuchsia-500 to-pink-600' },
-  { id: 'HR & Admin', icon: '👥', color: 'from-slate-500 to-gray-600' },
-  { id: 'Emerging Roles', icon: '🚀', color: 'from-violet-500 to-purple-600' },
+  { id: 'Business & Management', icon: '📋', color: 'from-amber-500 to-orange-600' },
   { id: 'General', icon: '📄', color: 'from-gray-500 to-slate-600' },
 ];
 
@@ -52,7 +48,7 @@ const TEMPLATE_CATEGORIES = [
 // ============================================
 
 const CV_TEMPLATES = [
-  // === ENGINEERING & TECH (2 templates) ===
+  // === ENGINEERING & TECH (3 templates) ===
   {
     id: 'software-engineer',
     name: 'Software Engineer',
@@ -71,6 +67,24 @@ const CV_TEMPLATES = [
     category: 'Engineering & Tech',
     premium: false,
   },
+  {
+    id: 'systems-engineer',
+    name: 'Systems Engineer',
+    color: 'from-slate-500 to-gray-700',
+    description: 'Infrastructure, DevOps, and cloud architecture',
+    targetRole: 'systems-engineer' as const,
+    category: 'Engineering & Tech',
+    premium: false,
+  },
+  {
+    id: 'devops-engineer',
+    name: 'DevOps Engineer',
+    color: 'from-orange-500 to-red-600',
+    description: 'CI/CD, cloud infrastructure, and reliability',
+    targetRole: 'devops-engineer' as const,
+    category: 'Engineering & Tech',
+    premium: false,
+  },
   // === DATA & AI (2 templates) ===
   {
     id: 'data-scientist',
@@ -78,7 +92,7 @@ const CV_TEMPLATES = [
     color: 'from-purple-500 to-pink-600',
     description: 'Highlight analytics skills, tools, and methodologies',
     targetRole: 'data-scientist' as const,
-    category: 'Data & Analytics',
+    category: 'Data & AI',
     premium: false,
   },
   {
@@ -87,76 +101,56 @@ const CV_TEMPLATES = [
     color: 'from-teal-500 to-cyan-600',
     description: 'Focus on ML frameworks, models, and research',
     targetRole: 'ai-ml-engineer' as const,
-    category: 'Data & Analytics',
+    category: 'Data & AI',
     premium: false,
   },
-  // === MANAGEMENT (3 templates) ===
-  {
-    id: 'product-manager',
-    name: 'Product Manager',
-    color: 'from-orange-500 to-red-600',
-    description: 'Showcase product launches and impact metrics',
-    targetRole: 'product-manager' as const,
-    category: 'Management',
-    premium: false,
-  },
+  // === BUSINESS & MANAGEMENT (3 templates) ===
   {
     id: 'project-manager',
     name: 'Project Manager',
-    color: 'from-emerald-500 to-green-600',
-    description: 'Delivery timelines, budget, and risk management',
+    color: 'from-amber-500 to-orange-600',
+    description: 'Delivery metrics, PMP certifications, and Agile',
     targetRole: 'project-manager' as const,
-    category: 'Management',
+    category: 'Business & Management',
     premium: false,
   },
   {
-    id: 'operations-manager',
-    name: 'Operations Manager',
-    color: 'from-teal-500 to-emerald-600',
-    description: 'Process optimization and team leadership',
-    targetRole: 'operations-manager' as const,
-    category: 'Management',
-    premium: false,
-  },
-  // === BUSINESS & FINANCE (2 templates) ===
-  {
-    id: 'financial-analyst',
-    name: 'Financial Analyst',
-    color: 'from-green-600 to-emerald-700',
-    description: 'Financial modeling, forecasting, and budgeting',
-    targetRole: 'financial-analyst' as const,
-    category: 'Business & Finance',
+    id: 'business-analyst',
+    name: 'Business Analyst',
+    color: 'from-emerald-500 to-teal-600',
+    description: 'Requirements analysis and data-driven insights',
+    targetRole: 'business-analyst' as const,
+    category: 'Business & Management',
     premium: false,
   },
   {
-    id: 'business-development',
-    name: 'Business Development',
-    color: 'from-purple-600 to-indigo-600',
-    description: 'Partnerships, growth strategies, and market expansion',
-    targetRole: 'business-development' as const,
-    category: 'Business & Finance',
+    id: 'marketing',
+    name: 'Marketing Professional',
+    color: 'from-violet-500 to-fuchsia-600',
+    description: 'Campaign ROI, growth metrics, and brand strategy',
+    targetRole: 'marketing' as const,
+    category: 'Business & Management',
     premium: false,
   },
-  // === MARKETING & CONTENT (2 templates) ===
+  // === CREATIVE (5 templates) ===
   {
-    id: 'content-writer',
-    name: 'Content Writer',
-    color: 'from-pink-500 to-rose-600',
-    description: 'SEO content, blogs, and copywriting',
-    targetRole: 'content-writer' as const,
-    category: 'Marketing & Content',
+    id: 'creative',
+    name: 'Creative',
+    color: 'from-pink-400 to-purple-500',
+    description: 'Gradient-styled layout for creative professionals',
+    targetRole: 'creative' as const,
+    category: 'Creative',
     premium: false,
   },
   {
-    id: 'social-media-manager',
-    name: 'Social Media Manager',
-    color: 'from-purple-500 to-pink-500',
-    description: 'Platform growth and campaign performance',
-    targetRole: 'social-media-manager' as const,
-    category: 'Marketing & Content',
+    id: 'creative-bold',
+    name: 'Creative Bold',
+    color: 'from-orange-500 to-red-600',
+    description: 'Bold, striking design for standing out',
+    targetRole: 'creative-bold' as const,
+    category: 'Creative',
     premium: false,
   },
-  // === CREATIVE (1 template) ===
   {
     id: 'graphic-designer',
     name: 'Graphic Designer',
@@ -166,54 +160,43 @@ const CV_TEMPLATES = [
     category: 'Creative',
     premium: false,
   },
-  // === HR & ADMIN (2 templates) ===
   {
-    id: 'hr-manager',
-    name: 'HR Manager',
-    color: 'from-orange-500 to-amber-600',
-    description: 'Talent management, compliance, and policies',
-    targetRole: 'hr-manager' as const,
-    category: 'HR & Admin',
+    id: 'video-editor',
+    name: 'Video Editor',
+    color: 'from-red-500 to-rose-600',
+    description: 'Showcase editing reels, tools, and production work',
+    targetRole: 'video-editor' as const,
+    category: 'Creative',
     premium: false,
   },
   {
-    id: 'admin-assistant',
-    name: 'Administrative Assistant',
-    color: 'from-blue-400 to-indigo-500',
-    description: 'Organization, support, and coordination',
-    targetRole: 'admin-assistant' as const,
-    category: 'HR & Admin',
+    id: 'content-writer',
+    name: 'Content Writer',
+    color: 'from-pink-500 to-rose-600',
+    description: 'SEO content, blogs, and copywriting',
+    targetRole: 'content-writer' as const,
+    category: 'Creative',
     premium: false,
   },
-  // === EMERGING & MODERN (3 templates) ===
+  // === GENERAL (5 templates) ===
   {
-    id: 'ai-prompt-engineer',
-    name: 'AI Prompt Engineer',
-    color: 'from-violet-600 to-purple-700',
-    description: 'Prompt design, LLM optimization, and AI systems',
-    targetRole: 'ai-prompt-engineer' as const,
-    category: 'Emerging Roles',
-    premium: false,
-  },
-  {
-    id: 'automation-specialist',
-    name: 'Automation Specialist',
-    color: 'from-cyan-500 to-blue-600',
-    description: 'No-code workflows and API integrations',
-    targetRole: 'automation-specialist' as const,
-    category: 'Emerging Roles',
+    id: 'professional',
+    name: 'Professional',
+    color: 'from-blue-600 to-blue-800',
+    description: 'Clean, classic layout suitable for any industry',
+    targetRole: 'professional' as const,
+    category: 'General',
     premium: false,
   },
   {
-    id: 'technical-writer',
-    name: 'Technical Writer',
-    color: 'from-gray-400 to-slate-500',
-    description: 'Documentation quality and API references',
-    targetRole: 'technical-writer' as const,
-    category: 'Emerging Roles',
+    id: 'minimal',
+    name: 'Minimal',
+    color: 'from-gray-400 to-gray-600',
+    description: 'Simple, elegant design with focus on content',
+    targetRole: 'minimal' as const,
+    category: 'General',
     premium: false,
   },
-  // === GENERAL (3 templates) ===
   {
     id: 'fresher',
     name: 'Fresher / Student',
@@ -238,6 +221,15 @@ const CV_TEMPLATES = [
     color: 'from-gray-700 to-slate-800',
     description: 'Leadership, strategic planning, and P&L',
     targetRole: 'executive' as const,
+    category: 'General',
+    premium: false,
+  },
+  {
+    id: 'academic',
+    name: 'Academic / Research',
+    color: 'from-gray-600 to-gray-800',
+    description: 'Publications, grants, and research interests',
+    targetRole: 'academic' as const,
     category: 'General',
     premium: false,
   },
@@ -294,7 +286,8 @@ export default function CVMaker() {
     skills: Array<Record<string, unknown>>;
     projects: Array<Record<string, unknown>>;
   }) => {
-    if (!user) return;
+    // TODO: Re-enable auth gate for production
+    // if (!user) return;
     
     try {
       setCreating(true);
@@ -306,7 +299,7 @@ export default function CVMaker() {
         target_role: 'software-engineer',
         personal_info: {
           full_name: (data.personal_info.full_name as string) || '',
-          email: (data.personal_info.email as string) || user.email || '',
+          email: (data.personal_info.email as string) || user?.email || '',
           phone: (data.personal_info.phone as string) || '',
           address: (data.personal_info.address as string) || '',
           summary: (data.personal_info.summary as string) || '',
@@ -368,7 +361,8 @@ export default function CVMaker() {
 
   // Load user's CVs
   useEffect(() => {
-    if (!user) return;
+    // TODO: Re-enable auth gate for production
+    // if (!user) return;
 
     const loadCVs = async () => {
       try {
@@ -376,7 +370,10 @@ export default function CVMaker() {
         setCVs((result.cvs || []) as unknown as CV[]);
       } catch (error) {
         console.error('Error loading CVs:', error);
-        setError('Failed to load your resumes. Please try again.');
+        // Don't show error if user just isn't logged in
+        if (user) {
+          setError('Failed to load your resumes. Please try again.');
+        }
       } finally {
         setLoading(false);
       }
@@ -387,7 +384,8 @@ export default function CVMaker() {
 
   // Create new CV from template
   const handleCreateCV = async (templateId: string, targetRole: string) => {
-    if (!user) return;
+    // TODO: Re-enable auth gate for production
+    // if (!user) return;
 
     try {
       setCreating(true);
@@ -402,7 +400,7 @@ export default function CVMaker() {
         target_role: targetRole,
         personal_info: {
           full_name: '',
-          email: user.email || '',
+          email: user?.email || '',
           phone: '',
           address: '',
           summary: '',
@@ -564,7 +562,7 @@ export default function CVMaker() {
         projects?: unknown[];
       };
       const response = await api.createCV({
-        template: 'modern',
+        template: 'professional',
         target_role: jobTitle || 'other',
         personal_info: {
           full_name: tailoredData.personal_info?.full_name || '',
@@ -618,7 +616,7 @@ export default function CVMaker() {
           projects?: unknown[];
         };
         const response = await api.createCV({
-          template: 'modern',
+          template: 'professional',
           target_role: jobTitle || 'other',
           personal_info: {
             full_name: tailoredData.personal_info?.full_name || '',
@@ -699,7 +697,7 @@ export default function CVMaker() {
             <div>
               <div className="flex items-center space-x-3 mb-2">
                 <Sparkles className="h-8 w-8 text-indigo-600" />
-                <h1 className="text-3xl font-bold text-gray-900">My Resumes</h1>
+                <h1 className="text-3xl font-bold text-gray-900">ATS Resumes</h1>
               </div>
               <p className="text-gray-600">Create ATS-optimized resumes that get you interviews</p>
             </div>

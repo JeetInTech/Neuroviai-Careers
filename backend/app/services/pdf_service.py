@@ -45,66 +45,48 @@ def sanitize_text(text: str) -> str:
 
 
 # Template style mapping - maps template IDs to style categories
+# Each template maps to a unique style for maximum visual differentiation
 TEMPLATE_STYLES = {
     # Professional / Classic style
     'professional': 'professional',
-    'classic-professional': 'professional',
-    'executive': 'professional',
-    'consultant': 'professional',
+    'classic-professional': 'classic-professional',
+    'executive': 'executive',
     
-    # Tech style
+    # Tech / Engineering style
     'tech-focused': 'tech',
-    'software-engineer': 'tech',
-    'mobile-app-developer': 'tech',
-    'qa-engineer': 'tech',
-    'systems-engineer': 'tech',
-    'ai-ml-engineer': 'tech',
-    'ai-ml': 'tech',
-    'data-scientist': 'tech',
-    'data-science': 'tech',
-    'data-analyst': 'tech',
-    'automation-specialist': 'tech',
+    'software-engineer': 'software-engineer',
+    'mobile-app-developer': 'mobile-dev',
+    'systems-engineer': 'systems-engineer',
+    'ai-ml-engineer': 'ai-ml',
+    'ai-ml': 'ai-ml',
+    'data-scientist': 'data-science',
+    'data-science': 'data-science',
+    'devops-engineer': 'devops',
     
     # Minimal style
     'minimal': 'minimal',
-    'modern-minimal': 'minimal',
-    'fresher': 'minimal',
-    'entry-level': 'minimal',
+    'modern-minimal': 'modern-minimal',
+    'fresher': 'fresher',
+    'entry-level': 'fresher',
     
     # Creative style
     'creative': 'creative',
-    'creative-bold': 'creative',
-    'designer': 'creative',
-    'graphic-designer': 'creative',
-    'video-editor': 'creative',
-    'content-writer': 'creative',
-    'social-media-manager': 'creative',
+    'creative-bold': 'creative-bold',
+    'designer': 'designer',
+    'graphic-designer': 'designer',
+    'video-editor': 'video-editor',
+    'content-writer': 'content-writer',
     
-    # Business style
-    'financial-analyst': 'business',
-    'accountant': 'business',
-    'sales-executive': 'business',
-    'business-development': 'business',
-    'product-manager': 'business',
+    # Business & Management
     'project-manager': 'business',
-    'program-manager': 'business',
-    'operations-manager': 'business',
-    
-    # Research / Academic style
-    'research-analyst': 'research',
-    'clinical-research': 'research',
-    'technical-writer': 'research',
-    
-    # HR / Admin style
-    'hr-manager': 'admin',
-    'legal-assistant': 'admin',
-    'admin-assistant': 'admin',
-    'healthcare-admin': 'admin',
+    'business-analyst': 'business',
+    'marketing': 'marketing',
     
     # Freelancer style
     'freelancer': 'freelancer',
-    'ai-prompt-engineer': 'freelancer',
-    'seo-specialist': 'freelancer',
+    
+    # Academic/Research
+    'academic': 'research',
 }
 
 
@@ -113,23 +95,97 @@ def get_template_style(template_name: str) -> str:
     return TEMPLATE_STYLES.get(template_name, 'professional')
 
 
-# Style configurations
+# Style configurations - unique visual identity per template
 STYLE_CONFIGS = {
     'professional': {
-        'header_align': 'C',  # Center
+        'header_align': 'C',
         'name_size': 22,
-        'section_style': 'underline',  # underline, box, simple
+        'section_style': 'underline',
         'section_caps': True,
         'bullet_indent': 20,
-        'default_accent': '#4F46E5',
+        'default_accent': '#4F46E5',  # Indigo
+        'skills_display': 'line',
+    },
+    'classic-professional': {
+        'header_align': 'C',
+        'name_size': 22,
+        'section_style': 'underline',
+        'section_caps': True,
+        'bullet_indent': 20,
+        'default_accent': '#1E3A5F',  # Navy
+        'skills_display': 'line',
+    },
+    'executive': {
+        'header_align': 'C',
+        'name_size': 24,
+        'section_style': 'underline',
+        'section_caps': True,
+        'bullet_indent': 22,
+        'default_accent': '#92400E',  # Gold-brown
+        'skills_display': 'line',
     },
     'tech': {
-        'header_align': 'L',  # Left
+        'header_align': 'L',
         'name_size': 20,
         'section_style': 'box',
         'section_caps': True,
         'bullet_indent': 18,
         'default_accent': '#059669',  # Green
+        'skills_display': 'grid',
+    },
+    'software-engineer': {
+        'header_align': 'L',
+        'name_size': 20,
+        'section_style': 'box',
+        'section_caps': True,
+        'bullet_indent': 18,
+        'default_accent': '#0E7490',  # Cyan
+        'skills_display': 'grid',
+    },
+    'mobile-dev': {
+        'header_align': 'L',
+        'name_size': 20,
+        'section_style': 'box',
+        'section_caps': True,
+        'bullet_indent': 18,
+        'default_accent': '#7C3AED',  # Purple
+        'skills_display': 'grid',
+    },
+    'systems-engineer': {
+        'header_align': 'L',
+        'name_size': 18,
+        'section_style': 'simple',
+        'section_caps': True,
+        'bullet_indent': 18,
+        'default_accent': '#374151',  # Dark gray (monochrome)
+        'skills_display': 'grid',
+    },
+    'ai-ml': {
+        'header_align': 'L',
+        'name_size': 20,
+        'section_style': 'box',
+        'section_caps': True,
+        'bullet_indent': 18,
+        'default_accent': '#7C3AED',  # Violet
+        'skills_display': 'grid',
+    },
+    'data-science': {
+        'header_align': 'L',
+        'name_size': 20,
+        'section_style': 'box',
+        'section_caps': True,
+        'bullet_indent': 18,
+        'default_accent': '#0369A1',  # Blue
+        'skills_display': 'grid',
+    },
+    'devops': {
+        'header_align': 'L',
+        'name_size': 20,
+        'section_style': 'box',
+        'section_caps': True,
+        'bullet_indent': 18,
+        'default_accent': '#EA580C',  # Orange
+        'skills_display': 'grid',
     },
     'minimal': {
         'header_align': 'L',
@@ -138,6 +194,25 @@ STYLE_CONFIGS = {
         'section_caps': False,
         'bullet_indent': 18,
         'default_accent': '#374151',  # Gray
+        'skills_display': 'line',
+    },
+    'modern-minimal': {
+        'header_align': 'C',
+        'name_size': 18,
+        'section_style': 'simple',
+        'section_caps': False,
+        'bullet_indent': 18,
+        'default_accent': '#6B7280',  # Muted gray
+        'skills_display': 'line',
+    },
+    'fresher': {
+        'header_align': 'C',
+        'name_size': 20,
+        'section_style': 'underline',
+        'section_caps': False,
+        'bullet_indent': 18,
+        'default_accent': '#2563EB',  # Bright blue
+        'skills_display': 'grid',
     },
     'creative': {
         'header_align': 'C',
@@ -146,6 +221,43 @@ STYLE_CONFIGS = {
         'section_caps': True,
         'bullet_indent': 20,
         'default_accent': '#DC2626',  # Red
+        'skills_display': 'grid',
+    },
+    'creative-bold': {
+        'header_align': 'L',
+        'name_size': 26,
+        'section_style': 'box',
+        'section_caps': True,
+        'bullet_indent': 20,
+        'default_accent': '#111827',  # Near black
+        'skills_display': 'grid',
+    },
+    'designer': {
+        'header_align': 'C',
+        'name_size': 22,
+        'section_style': 'simple',
+        'section_caps': True,
+        'bullet_indent': 20,
+        'default_accent': '#DB2777',  # Pink
+        'skills_display': 'grid',
+    },
+    'video-editor': {
+        'header_align': 'L',
+        'name_size': 22,
+        'section_style': 'box',
+        'section_caps': True,
+        'bullet_indent': 20,
+        'default_accent': '#9333EA',  # Purple
+        'skills_display': 'grid',
+    },
+    'content-writer': {
+        'header_align': 'C',
+        'name_size': 20,
+        'section_style': 'underline',
+        'section_caps': False,
+        'bullet_indent': 20,
+        'default_accent': '#0D9488',  # Teal
+        'skills_display': 'line',
     },
     'business': {
         'header_align': 'C',
@@ -154,6 +266,16 @@ STYLE_CONFIGS = {
         'section_caps': True,
         'bullet_indent': 20,
         'default_accent': '#1E40AF',  # Blue
+        'skills_display': 'line',
+    },
+    'marketing': {
+        'header_align': 'C',
+        'name_size': 22,
+        'section_style': 'underline',
+        'section_caps': True,
+        'bullet_indent': 20,
+        'default_accent': '#C2410C',  # Orange-red
+        'skills_display': 'line',
     },
     'research': {
         'header_align': 'L',
@@ -162,6 +284,7 @@ STYLE_CONFIGS = {
         'section_caps': False,
         'bullet_indent': 18,
         'default_accent': '#6B21A8',  # Purple
+        'skills_display': 'line',
     },
     'admin': {
         'header_align': 'C',
@@ -170,6 +293,7 @@ STYLE_CONFIGS = {
         'section_caps': True,
         'bullet_indent': 20,
         'default_accent': '#0369A1',  # Sky blue
+        'skills_display': 'line',
     },
     'freelancer': {
         'header_align': 'L',
@@ -178,6 +302,7 @@ STYLE_CONFIGS = {
         'section_caps': True,
         'bullet_indent': 18,
         'default_accent': '#EA580C',  # Orange
+        'skills_display': 'grid',
     },
 }
 
@@ -428,8 +553,9 @@ def generate_pdf(cv_data: Dict[str, Any]) -> bytes:
         pdf.add_section_title('Skills')
         skill_names = [s.get('name', '') for s in skills if s.get('name')]
         if skill_names:
-            # Use grid style for tech templates, otherwise line style
-            if style in ['tech', 'creative', 'freelancer']:
+            # Use skills_display from config, default to 'line'
+            skills_display = config.get('skills_display', 'line')
+            if skills_display == 'grid':
                 pdf.add_skills_grid(skill_names)
             else:
                 pdf.add_skills_line(skill_names)

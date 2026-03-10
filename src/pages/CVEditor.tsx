@@ -5,7 +5,7 @@ import api from '../lib/api';
 import type { CV, LaTeXExportOptions } from '../lib/database.types';
 import { Download, Share2, Save, ArrowLeft, Eye, Palette, Camera, X, Check } from 'lucide-react';
 import ShareCVDialog from '../components/ShareCVDialog';
-import { downloadLaTeX, getRecommendedTemplate } from '../lib/latex-generator';
+import { downloadLaTeX, getRecommendedTemplate, generateLaTeX, generateATSCVLaTeX, generateATSResumeLaTeX, downloadATSCVLaTeX, downloadATSResumeLaTeX } from '../lib/latex-generator';
 import { getTemplateComponent } from '../components/templates';
 import { TemplateDropdown } from '../components/TemplateSelector';
 import ImageCropper from '../components/ImageCropper';
@@ -196,11 +196,44 @@ export default function CVEditor() {
 
     try {
       setError('');
-      
-      // Use backend API for proper PDF generation with selectable text and links
+
+      // Generate LaTeX with template-specific section ordering
+      let latexTemplate: LaTeXExportOptions['template'] = 'professional';
+      const templateMap: Record<string, LaTeXExportOptions['template']> = {
+        'modern-minimal': 'minimal', 'minimal': 'minimal',
+        'tech-focused': 'software-engineer', 'software-engineer': 'software-engineer',
+        'classic-professional': 'professional', 'professional': 'professional',
+        'fresher': 'fresher', 'entry-level': 'fresher',
+        'data-scientist': 'data-scientist', 'data-science': 'data-scientist',
+        'ai-ml-engineer': 'ai-ml', 'ai-ml': 'ai-ml',
+      };
+      if (cv.template && templateMap[cv.template]) {
+        latexTemplate = templateMap[cv.template];
+      } else if (cv.target_role) {
+        latexTemplate = getRecommendedTemplate(cv.target_role);
+      }
+
+      const latexSource = generateLaTeX(cv, { template: latexTemplate });
+
+      // Try LaTeX compilation first for proper template-specific PDF
+      try {
+        const pdfBlob = await api.compileLaTeX(latexSource, cv.personal_info.full_name?.replace(/\s+/g, '_') || 'resume');
+        const url = window.URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${cv.personal_info.full_name || 'cv'}_resume.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        setShowDownloadMenu(false);
+        return;
+      } catch {
+        // LaTeX compiler not available, fall back to FPDF
+      }
+
+      // Fallback: use FPDF-based PDF generation
       const pdfBlob = await api.exportPDFById(cv.id);
-      
-      // Create download link
       const url = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -214,6 +247,58 @@ export default function CVEditor() {
     } catch (error) {
       console.error('Error generating PDF:', error);
       setError('Failed to download PDF. Please try again.');
+    }
+  };
+
+  const handleDownloadATSCV = async () => {
+    if (!cv) return;
+    try {
+      setError('');
+      const latexSource = generateATSCVLaTeX(cv);
+      try {
+        const pdfBlob = await api.compileLaTeX(latexSource, `${cv.personal_info.full_name?.replace(/\s+/g, '_') || 'cv'}_ATS_CV`);
+        const url = window.URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${cv.personal_info.full_name || 'cv'}_ATS_CV.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch {
+        // Compiler not available, download as .tex
+        downloadATSCVLaTeX(cv);
+      }
+      setShowDownloadMenu(false);
+    } catch (error) {
+      console.error('Error generating ATS CV:', error);
+      setError('Failed to generate ATS CV. Downloaded as LaTeX instead.');
+    }
+  };
+
+  const handleDownloadATSResume = async () => {
+    if (!cv) return;
+    try {
+      setError('');
+      const latexSource = generateATSResumeLaTeX(cv);
+      try {
+        const pdfBlob = await api.compileLaTeX(latexSource, `${cv.personal_info.full_name?.replace(/\s+/g, '_') || 'cv'}_ATS_Resume`);
+        const url = window.URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${cv.personal_info.full_name || 'cv'}_ATS_Resume.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch {
+        // Compiler not available, download as .tex
+        downloadATSResumeLaTeX(cv);
+      }
+      setShowDownloadMenu(false);
+    } catch (error) {
+      console.error('Error generating ATS Resume:', error);
+      setError('Failed to generate ATS Resume. Downloaded as LaTeX instead.');
     }
   };
 
@@ -415,7 +500,7 @@ export default function CVEditor() {
               </button>
 
               {showDownloadMenu && (
-                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
                   <div className="py-1">
                     <button
                       onClick={handleDownloadPDF}
@@ -434,6 +519,22 @@ export default function CVEditor() {
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Download as LaTeX
+                    </button>
+                    <div className="border-t border-gray-100 my-1" />
+                    <div className="px-4 py-1">
+                      <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">ATS Optimized</span>
+                    </div>
+                    <button
+                      onClick={handleDownloadATSCV}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                    >
+                      ATS CV (Multi-page)
+                    </button>
+                    <button
+                      onClick={handleDownloadATSResume}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                    >
+                      ATS Resume (1-page)
                     </button>
                   </div>
                 </div>

@@ -119,7 +119,11 @@ export type CVTemplate =
   | 'designer'
   | 'freelancer'
   | 'consultant'
-  | 'academic';
+  | 'academic'
+  | 'project-manager'
+  | 'business-analyst'
+  | 'marketing'
+  | 'devops-engineer';
 
 export type CVTargetRole = 
   // Engineering & Tech
@@ -165,6 +169,10 @@ export type CVTargetRole =
   | 'fresher'
   | 'freelancer'
   | 'executive'
+  | 'academic'
+  | 'devops-engineer'
+  | 'business-analyst'
+  | 'marketing'
   | 'other';
 
 export type CV = {
@@ -231,7 +239,7 @@ export type ATSSuggestion = {
 // ============================================
 
 export type LaTeXExportOptions = {
-  template: 'simple' | 'fresher' | 'software-engineer' | 'ai-ml' | 'data-scientist' | 'professional' | 'minimal';
+  template: 'simple' | 'fresher' | 'software-engineer' | 'ai-ml' | 'data-scientist' | 'professional' | 'minimal' | 'ats-cv' | 'ats-resume';
   font_size: '10pt' | '11pt' | '12pt';
   paper_size: 'a4paper' | 'letterpaper';
   color_scheme?: string;

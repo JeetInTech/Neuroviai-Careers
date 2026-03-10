@@ -1,0 +1,77 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.4in]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\setlist[itemize]{leftmargin=*, noitemsep, topsep=2pt, parsep=0pt}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\titlespacing{\section}{0pt}{6pt}{3pt}
+\hypersetup{hidelinks}
+
+\begin{document}
+
+\begin{center}
+{\Large \textbf{SANGRAMJEET GHOSH}} \\[2pt]
+{\small +91 9059150937 $|$ sangramjeet47@gmail.com $|$
+\href{https://www.linkedin.com/in/sangramjeetghosh}{linkedin.com/in/sangramjeetghosh} $|$
+\href{https://github.com/JeetInTech}{github.com/JeetInTech} $|$
+\href{https://neuroviai.com}{neuroviai.com}}
+\end{center}
+
+\noindent\rule{\textwidth}{0.4pt}
+
+\section*{PROFILE}
+Platform Engineer who designs service topologies, automates deploy pipelines, and keeps production systems healthy. Architected a 4-service SaaS platform spanning AWS, Render, Supabase, and Netlify with Docker, GitHub Actions CI/CD, secrets rotation, and structured monitoring. Comfortable with infrastructure-as-code thinking even on free-tier constraints.
+
+\section*{PLATFORM SKILLS}
+\textbf{Architecture:} Microservices Design, Service Mesh basics, API Gateway, Event-Driven Patterns \\
+\textbf{Cloud:} AWS (EC2, S3, IAM), Render, Supabase, Netlify, Vercel \\
+\textbf{Containers \& CI/CD:} Docker, Docker Compose, GitHub Actions, Build Matrices, Rollbacks \\
+\textbf{Reliability:} Health Probes, Structured Logging, Uptime Alerts, Secret Rotation, SSL/DNS \\
+\textbf{Languages:} Python, Bash, SQL, FastAPI, REST APIs
+
+\section*{PLATFORM PROJECTS}
+\textbf{Neuroviai -- Multi-Service SaaS} $|$ \href{https://neuroviai.com}{neuroviai.com}
+\begin{itemize}
+\item Decomposed monolith into 4 microservices (auth, content, payments, AI) with clear API boundaries.
+\item Deployed each service to the optimal provider: compute on Render, database on Supabase, CDN on Netlify, assets on AWS S3.
+\item Built GitHub Actions pipeline: parallel lint+test jobs, sequential Docker build, tagged image push, deploy trigger.
+\item Implemented environment-variable templates and secret injection per service per environment (dev/staging/prod).
+\item Configured health-check endpoints, JSON structured logging, and Slack-integrated alerting on error spikes.
+\end{itemize}
+
+\textbf{CraftingBrain -- Production Infra} $|$ \textit{AWS, Nginx, Docker} $|$ \href{https://craftingbrain.com}{craftingbrain.com}
+\begin{itemize}
+\item Provisioned and hardened AWS EC2 instance with Nginx reverse proxy, firewall rules, and daily DB backups.
+\item Set up SSL via Certbot, DNS A-records, and HTTP$\rightarrow$HTTPS redirect for production traffic.
+\end{itemize}
+
+\textbf{Therapy AI -- Container Orchestration} $|$ \textit{Docker Compose} $|$ \href{https://github.com/JeetInTech/Virtual-Therapist---LangGraph-Agentic-AI-System}{GitHub}
+\begin{itemize}
+\item Authored docker-compose.yml with service dependencies, shared volumes, network isolation, and env files.
+\end{itemize}
+
+\section*{EXPERIENCE}
+\textbf{Inikola Technologies -- Data Science Intern} \hfill Mar 2025 -- Present
+\begin{itemize}
+\item Managed cloud infra for CraftingBrain: EC2 sizing, S3 bucket policies, IAM least-privilege roles.
+\item Containerized Python services; reduced cold-start time through multi-stage Docker builds.
+\item Authored CI/CD pipeline automating code quality checks and production deployment on merge.
+\end{itemize}
+
+\textbf{Freelance Platform Developer} \hfill Nov 2024 -- Present
+\begin{itemize}
+\item Deployed client apps across 3 cloud providers with custom domains, SSL, and CDN configuration.
+\item Created runbooks documenting deployment steps, rollback procedures, and incident response flows.
+\end{itemize}
+
+\section*{EDUCATION}
+\textbf{B.Tech, AI \& Machine Learning} -- Malla Reddy University \hfill Expected 2026 \hfill GPA: 8.0/10
+
+\section*{CERTIFICATIONS \& AWARDS}
+AWS $|$ Google Cloud $|$ Coursera $|$ Microsoft Learn $|$ NPTEL \\
+1st Place IDEATHON 2.0 $|$ METALLOOP 2K23 Hackathon $|$ IEEE Paper Published
+
+\end{document}

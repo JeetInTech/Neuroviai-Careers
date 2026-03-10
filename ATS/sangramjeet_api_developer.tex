@@ -1,0 +1,77 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.4in]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\setlist[itemize]{leftmargin=*, noitemsep, topsep=2pt, parsep=0pt}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\titlespacing{\section}{0pt}{6pt}{3pt}
+\hypersetup{hidelinks}
+
+\begin{document}
+
+\begin{center}
+{\Large \textbf{SANGRAMJEET GHOSH}} \\[2pt]
+{\small +91 9059150937 $|$ sangramjeet47@gmail.com $|$
+\href{https://www.linkedin.com/in/sangramjeetghosh}{linkedin.com/in/sangramjeetghosh} $|$
+\href{https://github.com/JeetInTech}{github.com/JeetInTech} $|$
+\href{https://neuroviai.com}{neuroviai.com}}
+\end{center}
+
+\noindent\rule{\textwidth}{0.4pt}
+
+\section*{PROFILE}
+API Developer with production experience orchestrating 8 third-party integrations---LinkedIn, Twitter/X, Razorpay, Google Gemini, OpenAI---inside a live SaaS product. Skilled at designing versioned REST endpoints, wiring OAuth 2.0 handshakes, handling webhooks, enforcing rate limits, and building retry/fallback logic. Strong at writing clear API documentation and integration guides.
+
+\section*{API \& INTEGRATION SKILLS}
+\textbf{API Design:} RESTful Endpoints, Versioning, Request/Response Schemas, Pagination, HATEOAS basics \\
+\textbf{3rd-Party APIs:} LinkedIn, Twitter/X, Razorpay, Google Gemini, OpenAI, Webhook Receivers \\
+\textbf{Auth Protocols:} OAuth 2.0 (Authorization Code + Client Credentials), JWT, API Key Rotation \\
+\textbf{Resilience:} Rate Limiting, Retry with Backoff, Circuit Breaker Patterns, Timeout Management \\
+\textbf{Stack:} Python, FastAPI, PostgreSQL, Postman, Docker, Git
+
+\section*{PROJECTS}
+\textbf{Neuroviai -- 8-API SaaS Platform} $|$ \textit{FastAPI, PostgreSQL} $|$ \href{https://neuroviai.com}{neuroviai.com}
+\begin{itemize}
+\item Wired LinkedIn and Twitter/X publishing APIs end-to-end: OAuth consent, token refresh, post creation, analytics pull.
+\item Built Razorpay payment integration: plan creation, checkout sessions, webhook signature verification, refund API.
+\item Orchestrated Google Gemini and OpenAI calls through a unified gateway with provider-level quota tracking.
+\item Designed internal REST API surface (20+ endpoints) for user management, scheduling, and content CRUD.
+\end{itemize}
+
+\textbf{Virtual Therapy AI} $|$ \textit{Python, LangGraph, LLM APIs} $|$ \href{https://github.com/JeetInTech/Virtual-Therapist---LangGraph-Agentic-AI-System}{GitHub} \hfill Sep--Oct 2025
+\begin{itemize}
+\item Chained speech-to-text API and LLM inference API with async request pipeline and structured JSON output.
+\item Implemented multi-provider fallback: if primary LLM timed out, request routed to secondary within 200ms.
+\end{itemize}
+
+\textbf{CvForge -- Resume Builder API} $|$ \textit{FastAPI, JavaScript} $|$ \href{https://github.com/JeetInTech/CvForge-Online}{GitHub}
+\begin{itemize}
+\item Defined REST contract for resume CRUD, template selection, and PDF export with Swagger auto-docs.
+\end{itemize}
+
+\section*{EXPERIENCE}
+\textbf{Inikola Technologies -- Data Science Intern} \hfill Mar 2025 -- Present
+\begin{itemize}
+\item Authored RESTful endpoints for CraftingBrain's content platform; wrote Postman collections and integration tests.
+\item Plugged external NLP APIs into the service layer and exposed processed results through versioned REST routes.
+\item Set up request validation middleware returning RFC 7807 problem-detail error objects.
+\end{itemize}
+
+\textbf{Freelance API Developer} \hfill Nov 2024 -- Present
+\begin{itemize}
+\item Delivered API backends for 3+ clients: scoped endpoints, wrote OpenAPI specs, handled change requests.
+\item Built webhook listeners for payment confirmations, social-media callbacks, and event-driven workflows.
+\item Created runnable Postman workspaces and Markdown integration guides as part of every handoff.
+\end{itemize}
+
+\section*{EDUCATION}
+\textbf{B.Tech, AI \& Machine Learning} -- Malla Reddy University \hfill Expected 2026 \hfill GPA: 8.0/10
+
+\section*{HIGHLIGHTS}
+IEEE Research Paper $|$ 1st Place IDEATHON 2.0 $|$ METALLOOP 2K23 Hackathon \\
+\textit{Certs:} AWS, Google Cloud, Coursera, Microsoft Learn, NPTEL
+
+\end{document}

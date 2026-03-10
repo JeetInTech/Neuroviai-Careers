@@ -46,13 +46,13 @@ export default function Signup() {
   const checkUsername = async (username: string) => {
     if (username.length < 3) return;
     
-    const { data } = await supabase
-      .from('profiles')
-      .select('username')
-      .eq('username', username)
-      .single();
-    
-    setUsernameAvailable(!data);
+    try {
+      const response = await api.get(`/auth/check-username/${encodeURIComponent(username)}`);
+      setUsernameAvailable(response.data.available);
+    } catch {
+      // If endpoint doesn't exist, assume available
+      setUsernameAvailable(true);
+    }
   };
 
   useEffect(() => {

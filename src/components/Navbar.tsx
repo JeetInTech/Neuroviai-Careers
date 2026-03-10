@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Menu, X, User, Sparkles, FileText, LogIn, LogOut, UserPlus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { Home, Menu, X, User, Sparkles } from 'lucide-react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+    setIsOpen(false);
+  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -37,29 +44,36 @@ export default function Navbar() {
             </Link>
             <div className="hidden sm:ml-8 sm:flex sm:space-x-2">
               <NavLink to="/" icon={Home}>Home</NavLink>
-              {user && <NavLink to="/portfolio" icon={Sparkles}>My Resumes</NavLink>}
+              <NavLink to="/ats-resume" icon={FileText}>ATS Resume</NavLink>
+              <NavLink to="/portfolio" icon={Sparkles}>AI Resumes</NavLink>
             </div>
           </div>
 
           {/* User Menu (Desktop) */}
-          <div className="hidden sm:flex sm:items-center sm:space-x-4">
+          <div className="hidden sm:flex sm:items-center sm:space-x-2">
             {user ? (
-              <NavLink to="/profile" icon={User}>Profile</NavLink>
-            ) : (
-              <div className="flex items-center space-x-3">
-                <Link
-                  to="/login"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
+              <>
+                <NavLink to="/profile" icon={User}>Profile</NavLink>
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                 >
-                  Sign In
-                </Link>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <NavLink to="/login" icon={LogIn}>Login</NavLink>
                 <Link
                   to="/signup"
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                  onClick={() => setIsOpen(false)}
                 >
-                  Get Started
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Sign Up
                 </Link>
-              </div>
+              </>
             )}
           </div>
 
@@ -83,26 +97,24 @@ export default function Navbar() {
       <div className={`${isOpen ? 'block' : 'hidden'} sm:hidden border-t border-gray-100`}>
         <div className="pt-2 pb-3 space-y-1 px-2">
           <NavLink to="/" icon={Home}>Home</NavLink>
-          {user && <NavLink to="/portfolio" icon={Sparkles}>My Resumes</NavLink>}
+          <NavLink to="/ats-resume" icon={FileText}>ATS Resume</NavLink>
+          <NavLink to="/portfolio" icon={Sparkles}>AI Resumes</NavLink>
           {user ? (
-            <NavLink to="/profile" icon={User}>Profile</NavLink>
+            <>
+              <NavLink to="/profile" icon={User}>Profile</NavLink>
+              <button
+                onClick={handleSignOut}
+                className="flex w-full items-center px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </button>
+            </>
           ) : (
-            <div className="space-y-2 pt-2">
-              <Link
-                to="/login"
-                className="block w-full px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md"
-                onClick={() => setIsOpen(false)}
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/signup"
-                className="block w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 text-center"
-                onClick={() => setIsOpen(false)}
-              >
-                Get Started
-              </Link>
-            </div>
+            <>
+              <NavLink to="/login" icon={LogIn}>Login</NavLink>
+              <NavLink to="/signup" icon={UserPlus}>Sign Up</NavLink>
+            </>
           )}
         </div>
       </div>
