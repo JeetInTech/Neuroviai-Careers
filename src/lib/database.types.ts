@@ -23,7 +23,6 @@ export type Profile = {
 // RESUME/CV CORE TYPES
 // ============================================
 
-export type SkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 export type LanguageProficiency = 'basic' | 'conversational' | 'professional' | 'native';
 
 export type PersonalInfo = {
@@ -65,10 +64,8 @@ export type Experience = {
 };
 
 export type Skill = {
-  name: string;
-  level: number; // 1-5 scale
-  category: string; // e.g., 'technical', 'soft', 'tools'
-  years_of_experience?: number;
+  category: string; // e.g., 'Languages', 'AI / ML', 'Backend', 'DevOps / Cloud'
+  items: string[];  // e.g., ['Python', 'JavaScript', 'TypeScript']
 };
 
 export type Language = {

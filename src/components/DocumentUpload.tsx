@@ -34,9 +34,8 @@ interface ParsedCVData {
     description?: string;
   }>;
   skills: Array<{
-    name?: string;
-    level?: number;
     category?: string;
+    items?: string[];
   }>;
   projects: Array<{
     name?: string;

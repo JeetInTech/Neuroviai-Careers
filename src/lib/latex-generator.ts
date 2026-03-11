@@ -10,6 +10,13 @@
  */
 
 import type { CV, LaTeXExportOptions } from './database.types';
+import type {
+  ResumeData,
+  CVData,
+  ResumeSectionKey,
+  ResumeEngineConfig,
+} from './resume-engine';
+import { buildResumeData, buildCVData } from './resume-engine';
 
 export type ResumeSection = 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'languages';
 
@@ -206,18 +213,9 @@ ${entries}
 function generateSkills(cv: CV): string {
   if (!cv.skills || cv.skills.length === 0) return '';
 
-  // Group skills by category
-  const skillsByCategory = cv.skills.reduce((acc, skill) => {
-    const category = skill.category || 'Other';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(skill.name);
-    return acc;
-  }, {} as Record<string, string[]>);
-
-  const skillLines = Object.entries(skillsByCategory)
-    .map(([category, skills]) => 
-      `\\textbf{${escapeLatex(category)}:} ${skills.map(escapeLatex).join(', ')}`
-    )
+  const skillLines = cv.skills
+    .filter(g => g.category && g.items?.length > 0)
+    .map(g => `\\textbf{${escapeLatex(g.category)}:} ${g.items.map(escapeLatex).join(', ')}`)
     .join(' \\\\\n');
 
   return `
@@ -525,30 +523,28 @@ function generateATSCVPreamble(): string {
 `;
 }
 
-function generateATSCVHeader(cv: CV): string {
-  const { personal_info } = cv;
-
+function generateATSCVHeaderFromData(data: CVData): string {
   const contactLine: string[] = [];
-  if (personal_info.phone) contactLine.push(escapeLatex(personal_info.phone));
-  if (personal_info.email) contactLine.push(`\\href{mailto:${personal_info.email}}{${escapeLatex(personal_info.email)}}`);
-  if (personal_info.linkedin_url) {
-    const display = personal_info.linkedin_url.replace(/^https?:\/\/(www\.)?/, '');
-    contactLine.push(`\\href{${personal_info.linkedin_url}}{${escapeLatex(display)}}`);
+  if (data.header_links.phone) contactLine.push(escapeLatex(data.header_links.phone));
+  if (data.header_links.email) contactLine.push(`\\href{mailto:${data.header_links.email}}{${escapeLatex(data.header_links.email)}}`);
+  if (data.header_links.linkedin_url) {
+    const display = data.header_links.linkedin_url.replace(/^https?:\/\/(www\.)?/, '');
+    contactLine.push(`\\href{${data.header_links.linkedin_url}}{${escapeLatex(display)}}`);
   }
 
   const socialLine: string[] = [];
-  if (personal_info.github_url) {
-    const display = personal_info.github_url.replace(/^https?:\/\/(www\.)?/, '');
-    socialLine.push(`\\href{${personal_info.github_url}}{${escapeLatex(display)}}`);
+  if (data.header_links.github_url) {
+    const display = data.header_links.github_url.replace(/^https?:\/\/(www\.)?/, '');
+    socialLine.push(`\\href{${data.header_links.github_url}}{${escapeLatex(display)}}`);
   }
-  if (personal_info.portfolio_url) {
-    const display = personal_info.portfolio_url.replace(/^https?:\/\/(www\.)?/, '');
-    socialLine.push(`\\href{${personal_info.portfolio_url}}{${escapeLatex(display)}}`);
+  if (data.header_links.portfolio_url) {
+    const display = data.header_links.portfolio_url.replace(/^https?:\/\/(www\.)?/, '');
+    socialLine.push(`\\href{${data.header_links.portfolio_url}}{${escapeLatex(display)}}`);
   }
 
   let header = `
 \\begin{center}
-{\\LARGE \\textbf{${escapeLatex(personal_info.full_name).toUpperCase()}}} \\\\[6pt]
+{\\LARGE \\textbf{${escapeLatex(data.full_name).toUpperCase()}}} \\\\[6pt]
 {\\normalsize
 ${contactLine.join(' \\quad $|$ \\quad ')}
 }`;
@@ -568,19 +564,19 @@ ${socialLine.join(' \\quad $|$ \\quad ')}
   return header;
 }
 
-function generateATSCVSummary(cv: CV): string {
-  if (!cv.personal_info.summary) return '';
+function generateATSCVSummaryFromData(data: CVData): string {
+  if (!data.summary) return '';
   return `
 \\section*{Professional Summary}
 
-${escapeLatex(cv.personal_info.summary)}
+${escapeLatex(data.summary)}
 `;
 }
 
-function generateATSCVEducation(cv: CV): string {
-  if (!cv.education || cv.education.length === 0) return '';
+function generateATSCVEducationFromData(data: CVData): string {
+  if (data.education.length === 0) return '';
 
-  const entries = cv.education.map(edu => {
+  const entries = data.education.map(edu => {
     const dateRange = formatDateRange(edu.start_date, edu.end_date, false);
     const degree = edu.field_of_study
       ? `${escapeLatex(edu.degree)} in ${escapeLatex(edu.field_of_study)}`
@@ -593,18 +589,6 @@ ${escapeLatex(edu.institution)}${edu.location ? `, ${escapeLatex(edu.location)}`
       entry += ` \\hfill \\textbf{GPA: ${escapeLatex(edu.gpa)}}`;
     }
 
-    const items: string[] = [];
-    if (edu.description) items.push(edu.description);
-    if (edu.achievements && edu.achievements.length > 0) {
-      items.push(...edu.achievements);
-    }
-    if (items.length > 0) {
-      entry += `
-\\begin{itemize}
-${items.map(a => `\\item ${escapeLatex(a)}`).join('\n')}
-\\end{itemize}`;
-    }
-
     return entry;
   }).join('\n\n');
 
@@ -615,20 +599,11 @@ ${entries}
 `;
 }
 
-function generateATSCVSkills(cv: CV): string {
-  if (!cv.skills || cv.skills.length === 0) return '';
+function generateATSCVSkillsFromData(data: CVData): string {
+  if (data.skills.length === 0) return '';
 
-  const skillsByCategory = cv.skills.reduce((acc, skill) => {
-    const category = skill.category || 'Other';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(skill.name);
-    return acc;
-  }, {} as Record<string, string[]>);
-
-  const rows = Object.entries(skillsByCategory)
-    .map(([category, skills]) =>
-      `\\textbf{${escapeLatex(category)}} & ${skills.map(escapeLatex).join(', ')} \\\\[3pt]`
-    )
+  const rows = data.skills
+    .map(g => `\\textbf{${escapeLatex(g.category)}} & ${g.skills.map(escapeLatex).join(', ')} \\\\[3pt]`)
     .join('\n');
 
   return `
@@ -640,24 +615,19 @@ ${rows}
 `;
 }
 
-function generateATSCVExperience(cv: CV): string {
-  if (!cv.experience || cv.experience.length === 0) return '';
+function generateATSCVExperienceFromData(data: CVData): string {
+  if (data.experience.length === 0) return '';
 
-  const entries = cv.experience.map(exp => {
+  const entries = data.experience.map(exp => {
     const dateRange = formatDateRange(exp.start_date, exp.end_date, exp.current);
 
     let entry = `\\textbf{${escapeLatex(exp.title)}} \\hfill \\textit{${dateRange}} \\\\
 \\textit{${escapeLatex(exp.company)}${exp.location ? `, ${escapeLatex(exp.location)}` : ''}}`;
 
-    if (exp.achievements && exp.achievements.length > 0) {
+    if (exp.bullets.length > 0) {
       entry += `
 \\begin{itemize}
-${exp.achievements.map(a => `\\item ${escapeLatex(a)}`).join('\n')}
-\\end{itemize}`;
-    } else if (exp.description) {
-      entry += `
-\\begin{itemize}
-\\item ${escapeLatex(exp.description)}
+${exp.bullets.map(b => `\\item ${escapeLatex(b)}`).join('\n')}
 \\end{itemize}`;
     }
 
@@ -671,19 +641,15 @@ ${entries}
 `;
 }
 
-function generateATSCVProjects(cv: CV): string {
-  if (!cv.projects || cv.projects.length === 0) return '';
+function generateATSCVProjectsFromData(data: CVData): string {
+  if (data.projects.length === 0) return '';
 
-  const entries = cv.projects.map(project => {
+  const entries = data.projects.map(project => {
     const techStack = project.technologies.length > 0
       ? project.technologies.map(escapeLatex).join(', ')
       : '';
-    const dateRange = project.start_date
-      ? formatDateRange(project.start_date, project.end_date || '', false)
-      : '';
 
     let entry = `\\textbf{${escapeLatex(project.name)}}`;
-    if (dateRange) entry += ` \\hfill \\textit{${dateRange}}`;
     entry += ` \\\\`;
     if (techStack) entry += `\n\\textit{${techStack}}`;
 
@@ -692,15 +658,10 @@ function generateATSCVProjects(cv: CV): string {
     if (project.github_url) links.push(`\\href{${project.github_url}}{GitHub}`);
     if (links.length > 0) entry += ` \\hfill ${links.join(' $|$ ')}`;
 
-    if (project.highlights && project.highlights.length > 0) {
+    if (project.bullets.length > 0) {
       entry += `
 \\begin{itemize}
-${project.highlights.map(h => `\\item ${escapeLatex(h)}`).join('\n')}
-\\end{itemize}`;
-    } else if (project.description) {
-      entry += `
-\\begin{itemize}
-\\item ${escapeLatex(project.description)}
+${project.bullets.map(b => `\\item ${escapeLatex(b)}`).join('\n')}
 \\end{itemize}`;
     }
 
@@ -714,10 +675,10 @@ ${entries}
 `;
 }
 
-function generateATSCVCertifications(cv: CV): string {
-  if (!cv.certifications || cv.certifications.length === 0) return '';
+function generateATSCVCertificationsFromData(data: CVData): string {
+  if (data.certifications.length === 0) return '';
 
-  const entries = cv.certifications.map(cert => {
+  const entries = data.certifications.map(cert => {
     const certName = cert.url
       ? `\\href{${cert.url}}{${escapeLatex(cert.name)}}`
       : escapeLatex(cert.name);
@@ -733,10 +694,10 @@ ${entries}
 `;
 }
 
-function generateATSCVLanguages(cv: CV): string {
-  if (!cv.languages || cv.languages.length === 0) return '';
+function generateATSCVLanguagesFromData(data: CVData): string {
+  if (data.languages.length === 0) return '';
 
-  const langList = cv.languages
+  const langList = data.languages
     .map(lang => `${escapeLatex(lang.name)} (${escapeLatex(lang.proficiency)})`)
     .join(' \\quad $|$ \\quad ');
 
@@ -746,27 +707,45 @@ ${langList}
 `;
 }
 
-/**
- * Generate ATS-optimized CV LaTeX (multi-page, comprehensive)
- * Based on a template that scores 92+ on ATS systems
- */
-export function generateATSCVLaTeX(cv: CV, sectionOrder?: ResumeSection[]): string {
-  const order = sectionOrder || ['summary', 'education', 'skills', 'experience', 'projects', 'certifications', 'languages'];
+function generateATSCVCustomSectionsFromData(data: CVData): string {
+  if (data.custom_sections.length === 0) return '';
 
-  const generators: Record<string, (cv: CV) => string> = {
-    'summary': generateATSCVSummary,
-    'experience': generateATSCVExperience,
-    'education': generateATSCVEducation,
-    'skills': generateATSCVSkills,
-    'projects': generateATSCVProjects,
-    'certifications': generateATSCVCertifications,
-    'languages': generateATSCVLanguages,
-  };
+  return data.custom_sections.map(section => {
+    const entries = section.items.map(item => {
+      let line = '';
+      if (item.title) line += `\\textbf{${escapeLatex(item.title)}}`;
+      if (item.subtitle) line += ` -- ${escapeLatex(item.subtitle)}`;
+      if (item.date) line += ` \\hfill ${escapeLatex(item.date)}`;
+      if (item.description) line += ` \\\\\n${escapeLatex(item.description)}`;
+      return line;
+    }).join(' \\\\\n');
+
+    return `
+\\section*{${escapeLatex(section.title)}}
+
+${entries}
+`;
+  }).join('');
+}
+
+/**
+ * Generate ATS-optimized CV LaTeX (multi-page, comprehensive).
+ * Uses the CV Engine — includes ALL data, no limits.
+ */
+export function generateATSCVLaTeX(cv: CV): string {
+  const data = buildCVData(cv);
 
   const sections = [
     generateATSCVPreamble(),
-    generateATSCVHeader(cv),
-    ...order.map(section => generators[section]?.(cv) || '').filter(Boolean),
+    generateATSCVHeaderFromData(data),
+    generateATSCVSummaryFromData(data),
+    generateATSCVEducationFromData(data),
+    generateATSCVSkillsFromData(data),
+    generateATSCVExperienceFromData(data),
+    generateATSCVProjectsFromData(data),
+    generateATSCVCertificationsFromData(data),
+    generateATSCVLanguagesFromData(data),
+    generateATSCVCustomSectionsFromData(data),
     '\n\\end{document}\n',
   ];
 
@@ -775,7 +754,7 @@ export function generateATSCVLaTeX(cv: CV, sectionOrder?: ResumeSection[]): stri
 
 // ============================================
 // ATS RESUME GENERATOR - Single-page compact format
-// Tight spacing, role-focused, no icons
+// Uses Resume Engine for intelligent content selection
 // ============================================
 
 function generateATSResumePreamble(): string {
@@ -795,28 +774,27 @@ function generateATSResumePreamble(): string {
 `;
 }
 
-function generateATSResumeHeader(cv: CV): string {
-  const { personal_info } = cv;
+function generateATSResumeHeaderFromData(data: ResumeData): string {
   const contactParts: string[] = [];
 
-  if (personal_info.phone) contactParts.push(escapeLatex(personal_info.phone));
-  if (personal_info.email) contactParts.push(escapeLatex(personal_info.email));
-  if (personal_info.linkedin_url) {
-    const display = personal_info.linkedin_url.replace(/^https?:\/\/(www\.)?/, '');
-    contactParts.push(`\\href{${personal_info.linkedin_url}}{${escapeLatex(display)}}`);
+  if (data.header_links.phone) contactParts.push(escapeLatex(data.header_links.phone));
+  if (data.header_links.email) contactParts.push(escapeLatex(data.header_links.email));
+  if (data.header_links.linkedin_url) {
+    const display = data.header_links.linkedin_url.replace(/^https?:\/\/(www\.)?/, '');
+    contactParts.push(`\\href{${data.header_links.linkedin_url}}{${escapeLatex(display)}}`);
   }
-  if (personal_info.github_url) {
-    const display = personal_info.github_url.replace(/^https?:\/\/(www\.)?/, '');
-    contactParts.push(`\\href{${personal_info.github_url}}{${escapeLatex(display)}}`);
+  if (data.header_links.github_url) {
+    const display = data.header_links.github_url.replace(/^https?:\/\/(www\.)?/, '');
+    contactParts.push(`\\href{${data.header_links.github_url}}{${escapeLatex(display)}}`);
   }
-  if (personal_info.portfolio_url) {
-    const display = personal_info.portfolio_url.replace(/^https?:\/\/(www\.)?/, '');
-    contactParts.push(`\\href{${personal_info.portfolio_url}}{${escapeLatex(display)}}`);
+  if (data.header_links.portfolio_url) {
+    const display = data.header_links.portfolio_url.replace(/^https?:\/\/(www\.)?/, '');
+    contactParts.push(`\\href{${data.header_links.portfolio_url}}{${escapeLatex(display)}}`);
   }
 
   return `
 \\begin{center}
-{\\Large \\textbf{${escapeLatex(personal_info.full_name).toUpperCase()}}} \\\\[2pt]
+{\\Large \\textbf{${escapeLatex(data.full_name).toUpperCase()}}} \\\\[2pt]
 {\\small ${contactParts.join(' \\;|\\; ')}}
 \\end{center}
 
@@ -824,28 +802,19 @@ function generateATSResumeHeader(cv: CV): string {
 `;
 }
 
-function generateATSResumeSummary(cv: CV): string {
-  if (!cv.personal_info.summary) return '';
+function generateATSResumeSummaryFromData(data: ResumeData): string {
+  if (!data.summary) return '';
   return `
 \\section*{SUMMARY}
-${escapeLatex(cv.personal_info.summary)}
+${escapeLatex(data.summary)}
 `;
 }
 
-function generateATSResumeSkills(cv: CV): string {
-  if (!cv.skills || cv.skills.length === 0) return '';
+function generateATSResumeSkillsFromData(data: ResumeData): string {
+  if (data.skills.length === 0) return '';
 
-  const skillsByCategory = cv.skills.reduce((acc, skill) => {
-    const category = skill.category || 'Other';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(skill.name);
-    return acc;
-  }, {} as Record<string, string[]>);
-
-  const skillLines = Object.entries(skillsByCategory)
-    .map(([category, skills]) =>
-      `\\textbf{${escapeLatex(category)}:} ${skills.map(escapeLatex).join(', ')}`
-    )
+  const skillLines = data.skills
+    .map(g => `\\textbf{${escapeLatex(g.category)}:} ${g.skills.map(escapeLatex).join(', ')}`)
     .join(' \\\\\n');
 
   return `
@@ -854,23 +823,18 @@ ${skillLines}
 `;
 }
 
-function generateATSResumeExperience(cv: CV): string {
-  if (!cv.experience || cv.experience.length === 0) return '';
+function generateATSResumeExperienceFromData(data: ResumeData): string {
+  if (data.experience.length === 0) return '';
 
-  const entries = cv.experience.map(exp => {
+  const entries = data.experience.map(exp => {
     const dateRange = formatDateRange(exp.start_date, exp.end_date, exp.current);
     let entry = `\\textbf{${escapeLatex(exp.title)} -- ${escapeLatex(exp.company)}} \\hfill ${dateRange}`;
     if (exp.location) entry += ` \\\\\n${escapeLatex(exp.location)}`;
 
-    if (exp.achievements && exp.achievements.length > 0) {
+    if (exp.bullets.length > 0) {
       entry += `
 \\begin{itemize}
-${exp.achievements.map(a => `\\item ${escapeLatex(a)}`).join('\n')}
-\\end{itemize}`;
-    } else if (exp.description) {
-      entry += `
-\\begin{itemize}
-\\item ${escapeLatex(exp.description)}
+${exp.bullets.map(b => `\\item ${escapeLatex(b)}`).join('\n')}
 \\end{itemize}`;
     }
 
@@ -883,31 +847,21 @@ ${entries}
 `;
 }
 
-function generateATSResumeProjects(cv: CV): string {
-  if (!cv.projects || cv.projects.length === 0) return '';
+function generateATSResumeProjectsFromData(data: ResumeData): string {
+  if (data.projects.length === 0) return '';
 
-  const entries = cv.projects.map(project => {
+  const entries = data.projects.map(project => {
     const techStack = project.technologies.length > 0
       ? project.technologies.map(escapeLatex).join(', ')
       : '';
 
     let entry = `\\textbf{${escapeLatex(project.name)}}`;
-    if (techStack) entry += ` \\\\\n\\textit{${techStack}}`;
+    if (techStack) entry += ` -- \\textit{${techStack}}`;
 
-    const links: string[] = [];
-    if (project.url) links.push(`\\href{${project.url}}{Website}`);
-    if (project.github_url) links.push(`\\href{${project.github_url}}{GitHub}`);
-    if (links.length > 0) entry += ` \\;|\\;\n${links.join(' $|$ ')}`;
-
-    if (project.highlights && project.highlights.length > 0) {
+    if (project.bullets.length > 0) {
       entry += `
 \\begin{itemize}
-${project.highlights.map(h => `\\item ${escapeLatex(h)}`).join('\n')}
-\\end{itemize}`;
-    } else if (project.description) {
-      entry += `
-\\begin{itemize}
-\\item ${escapeLatex(project.description)}
+${project.bullets.map(b => `\\item ${escapeLatex(b)}`).join('\n')}
 \\end{itemize}`;
     }
 
@@ -920,20 +874,17 @@ ${entries}
 `;
 }
 
-function generateATSResumeEducation(cv: CV): string {
-  if (!cv.education || cv.education.length === 0) return '';
+function generateATSResumeEducationFromData(data: ResumeData): string {
+  if (data.education.length === 0) return '';
 
-  const entries = cv.education.map(edu => {
+  const entries = data.education.map(edu => {
     const degree = edu.field_of_study
       ? `${escapeLatex(edu.degree)} in ${escapeLatex(edu.field_of_study)}`
       : escapeLatex(edu.degree);
 
-    let entry = `\\textbf{${degree}} \\hfill Expected ${edu.end_date?.split('-')[0] || ''} \\\\
+    const year = edu.end_date?.split('-')[0] || '';
+    return `\\textbf{${degree}} \\hfill ${year} \\\\
 ${escapeLatex(edu.institution)}${edu.location ? `, ${escapeLatex(edu.location)}` : ''}`;
-
-    if (edu.gpa) entry += ` \\hfill GPA: ${escapeLatex(edu.gpa)}`;
-
-    return entry;
   }).join('\n\n');
 
   return `
@@ -942,60 +893,41 @@ ${entries}
 `;
 }
 
-function generateATSResumeCertifications(cv: CV): string {
-  if (!cv.certifications || cv.certifications.length === 0) return '';
-
-  const entries = cv.certifications.map(cert => {
-    const certName = cert.url
-      ? `\\href{${cert.url}}{${escapeLatex(cert.name)}}`
-      : escapeLatex(cert.name);
-    return `${certName} -- ${escapeLatex(cert.issuer)}${cert.date ? ` (${cert.date})` : ''}`;
-  }).join(' \\\\\n');
-
-  return `
-\\section*{CERTIFICATIONS}
-${entries}
-`;
-}
-
-function generateATSResumeLanguages(cv: CV): string {
-  if (!cv.languages || cv.languages.length === 0) return '';
-
-  const langList = cv.languages
-    .map(lang => `${escapeLatex(lang.name)} (${escapeLatex(lang.proficiency)})`)
-    .join(', ');
-
-  return `
-\\section*{LANGUAGES}
-${langList}
-`;
-}
-
 /**
- * Generate ATS-optimized Resume LaTeX (single-page, compact)
- * Tight spacing, role-focused layout
+ * Generate ATS-optimized Resume LaTeX (single-page, compact).
+ * Uses the Resume Engine for intelligent content selection.
+ * Only includes: Summary, Core Skills, Experience, Projects, Education.
+ * No certifications, languages, publications, etc.
+ *
+ * @param cv       Full CV data
+ * @param sections User-selected sections (defaults to all 5)
+ * @param config   Override limits if needed
  */
-export function generateATSResumeLaTeX(cv: CV, sectionOrder?: ResumeSection[]): string {
-  const order = sectionOrder || getDefaultSectionOrder(cv.template || cv.target_role || 'professional');
+export function generateATSResumeLaTeX(
+  cv: CV,
+  sections?: ResumeSectionKey[],
+  config?: Partial<ResumeEngineConfig>,
+): string {
+  const data = buildResumeData(cv, sections, config, cv.target_role);
 
-  const generators: Record<string, (cv: CV) => string> = {
-    'summary': generateATSResumeSummary,
-    'experience': generateATSResumeExperience,
-    'education': generateATSResumeEducation,
-    'skills': generateATSResumeSkills,
-    'projects': generateATSResumeProjects,
-    'certifications': generateATSResumeCertifications,
-    'languages': generateATSResumeLanguages,
+  const sectionGenerators: Record<ResumeSectionKey, (d: ResumeData) => string> = {
+    summary: generateATSResumeSummaryFromData,
+    skills: generateATSResumeSkillsFromData,
+    experience: generateATSResumeExperienceFromData,
+    projects: generateATSResumeProjectsFromData,
+    education: generateATSResumeEducationFromData,
   };
 
-  const sections = [
+  const parts = [
     generateATSResumePreamble(),
-    generateATSResumeHeader(cv),
-    ...order.map(section => generators[section]?.(cv) || '').filter(Boolean),
+    generateATSResumeHeaderFromData(data),
+    ...data.included_sections
+      .map(key => sectionGenerators[key]?.(data) || '')
+      .filter(Boolean),
     '\n\\end{document}\n',
   ];
 
-  return sections.join('');
+  return parts.join('');
 }
 
 /**

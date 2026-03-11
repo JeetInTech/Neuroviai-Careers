@@ -17,7 +17,6 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const copyPassword = () => {
     navigator.clipboard.writeText(password);
@@ -90,10 +89,17 @@ export default function Signup() {
       // Create account via FastAPI backend (auto-confirms email)
       await signUp(email, password, username, displayName);
 
-      // Show success modal
-      setShowSuccessModal(true);
+      // Account is auto-confirmed, go straight to login
+      navigate('/login', { state: { message: 'Account created successfully! Please sign in.' } });
     } catch (error: any) {
-      setError(error.message || 'Failed to create account');
+      const msg = error.message || 'Failed to create account';
+      if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists')) {
+        setError('An account with this email already exists. Please sign in or reset your password.');
+      } else if (msg.toLowerCase().includes('username')) {
+        setError('This username is already taken. Please choose a different one.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -101,75 +107,6 @@ export default function Signup() {
 
   return (
     <>
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4">
-            {/* Backdrop */}
-            <div 
-              className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-              onClick={() => {}}
-            />
-            
-            {/* Modal */}
-            <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-8 transform transition-all">
-              {/* Email Icon */}
-              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 mb-6">
-                <Mail className="h-10 w-10 text-indigo-600" />
-              </div>
-              
-              {/* Content */}
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Check Your Email!
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  We've sent a confirmation link to:
-                </p>
-                
-                {/* Email Address */}
-                <div className="bg-indigo-50 rounded-lg p-3 mb-4">
-                  <span className="text-indigo-700 font-semibold">{email}</span>
-                </div>
-                
-                <p className="text-gray-500 text-sm mb-6">
-                  Please click the link in the email to verify your account before signing in.
-                  Don't forget to check your spam folder!
-                </p>
-                
-                {/* Account Details */}
-                <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-                  <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Your Account Details</p>
-                  <div className="flex items-center mb-2">
-                    <User className="h-4 w-4 text-gray-400 mr-2" />
-                    <span className="text-sm text-gray-600">Username:</span>
-                    <span className="text-sm font-medium text-gray-900 ml-2">@{username}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <UserCircle className="h-4 w-4 text-gray-400 mr-2" />
-                    <span className="text-sm text-gray-600">Display Name:</span>
-                    <span className="text-sm font-medium text-gray-900 ml-2">{displayName || username}</span>
-                  </div>
-                </div>
-                
-                {/* Action Button */}
-                <button
-                  onClick={() => navigate('/login')}
-                  className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                >
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  I've Confirmed My Email - Sign In
-                </button>
-                
-                <p className="text-xs text-gray-400 mt-4">
-                  Didn't receive the email? Check your spam folder or try signing up again.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="flex justify-center">

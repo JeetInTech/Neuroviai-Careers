@@ -10,7 +10,7 @@ import {
   Loader2, Lightbulb, X, User, Briefcase, 
   GraduationCap, Code, Languages, Award, Trash2, Upload,
   PanelRightClose, PanelRight, GripVertical, ChevronUp, Settings2,
-  Check
+  Check, FileText
 } from 'lucide-react';
 import ShareCVDialog from '../components/ShareCVDialog';
 import DocumentUpload from '../components/DocumentUpload';
@@ -237,6 +237,11 @@ export default function CVEditor() {
   
   // Color customization state
   const [showColorPicker, setShowColorPicker] = useState(false);
+  
+  // ATS Preview state
+  const [atsPreviewMode, setAtsPreviewMode] = useState<'off' | 'cv' | 'resume'>('off');
+  const [atsPreviewUrl, setAtsPreviewUrl] = useState<string | null>(null);
+  const [atsCompiling, setAtsCompiling] = useState(false);
   
   // Auto-save state
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -497,16 +502,23 @@ export default function CVEditor() {
         num_skills: 8
       });
       
-      const newSkills = skills.map(name => ({
-        name,
-        level: 3,
-        category: 'Technical'
-      }));
-      
-      setCV({
-        ...cv,
-        skills: [...cv.skills, ...newSkills]
-      });
+      // AI returns flat skill names — add them to a "Technical" group
+      const existingTechGroup = cv.skills.find(g => g.category.toLowerCase() === 'technical');
+      if (existingTechGroup) {
+        const existingItems = new Set(existingTechGroup.items.map(s => s.toLowerCase()));
+        const newItems = skills.filter(s => !existingItems.has(s.toLowerCase()));
+        const updatedSkills = cv.skills.map(g => 
+          g === existingTechGroup 
+            ? { ...g, items: [...g.items, ...newItems] }
+            : g
+        );
+        setCV({ ...cv, skills: updatedSkills });
+      } else {
+        setCV({
+          ...cv,
+          skills: [...cv.skills, { category: 'Technical', items: skills }]
+        });
+      }
     } catch (err) {
       console.error('Error generating skills:', err);
       setError('Failed to generate skills');
@@ -621,10 +633,9 @@ export default function CVEditor() {
         keywords: [],
       })) : cv.experience,
       skills: data.skills.length > 0 ? data.skills.map(skill => ({
-        name: (skill.name as string) || '',
-        level: (skill.level as number) || 3,
         category: (skill.category as string) || 'Technical',
-      })) : cv.skills,
+        items: (skill.items as string[]) || [],
+      })).filter(g => g.items.length > 0) : cv.skills,
       projects: data.projects.length > 0 ? data.projects.map(proj => ({
         name: (proj.name as string) || '',
         description: (proj.description as string) || '',
@@ -820,25 +831,7 @@ export default function CVEditor() {
 
       const latexSource = generateLaTeX(cv, { template: latexTemplate });
 
-      // Try LaTeX compilation first for proper template-specific PDF
-      try {
-        const pdfBlob = await api.compileLaTeX(latexSource, cv.personal_info.full_name?.replace(/\s+/g, '_') || 'resume');
-        const url = window.URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${cv.personal_info.full_name || 'cv'}_resume.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        setShowDownloadMenu(false);
-        return;
-      } catch {
-        // LaTeX compiler not available, fall back to FPDF
-      }
-
-      // Fallback: use FPDF-based PDF generation
-      const pdfBlob = await api.exportPDFById(cv.id);
+      const pdfBlob = await api.compileLaTeX(latexSource, cv.personal_info.full_name?.replace(/\s+/g, '_') || 'resume');
       const url = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -847,11 +840,10 @@ export default function CVEditor() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
       setShowDownloadMenu(false);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      setError('Failed to download PDF. Please try again.');
+      setError('Failed to download PDF. LaTeX compilation may be unavailable.');
     }
   };
 
@@ -886,7 +878,7 @@ export default function CVEditor() {
       setError('');
       const latexSource = generateATSResumeLaTeX(cv);
       try {
-        const pdfBlob = await api.compileLaTeX(latexSource, `${cv.personal_info.full_name?.replace(/\s+/g, '_') || 'cv'}_ATS_Resume`);
+        const pdfBlob = await api.compileLaTeX(latexSource, `${cv.personal_info.full_name?.replace(/\s+/g, '_') || 'cv'}_ATS_Resume`, true);
         const url = window.URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
@@ -1045,6 +1037,39 @@ export default function CVEditor() {
     } else {
       // Use OrderedTemplate when sections are reordered
       return <OrderedTemplate cv={cv} isViewMode={true} sectionOrder={sectionOrder} templateName={cv.template || cv.target_role || 'professional'} />;
+    }
+  };
+
+  const handleAtsPreviewToggle = async (mode: 'off' | 'cv' | 'resume') => {
+    if (mode === 'off' || mode === atsPreviewMode) {
+      // Turn off
+      if (atsPreviewUrl) URL.revokeObjectURL(atsPreviewUrl);
+      setAtsPreviewUrl(null);
+      setAtsPreviewMode('off');
+      return;
+    }
+
+    if (!cv) return;
+    setAtsPreviewMode(mode);
+    setAtsCompiling(true);
+
+    try {
+      const latexSource = mode === 'cv'
+        ? generateATSCVLaTeX(cv)
+        : generateATSResumeLaTeX(cv);
+
+      const pdfBlob = await api.compileLaTeX(
+        latexSource,
+        `${cv.personal_info.full_name?.replace(/\s+/g, '_') || 'cv'}_ATS_${mode === 'cv' ? 'CV' : 'Resume'}`,
+        mode === 'resume',
+      );
+      if (atsPreviewUrl) URL.revokeObjectURL(atsPreviewUrl);
+      setAtsPreviewUrl(URL.createObjectURL(pdfBlob));
+    } catch {
+      setError('ATS preview failed — LaTeX compiler may be unavailable.');
+      setAtsPreviewMode('off');
+    } finally {
+      setAtsCompiling(false);
     }
   };
 
@@ -1745,15 +1770,15 @@ export default function CVEditor() {
             <Section 
                 title="Skills" 
                 icon={<Code className="h-5 w-5" />}
-                badge={cv.skills.length}
+                badge={cv.skills.reduce((sum, g) => sum + (g.items?.length || 0), 0)}
                 onAdd={() => setCV({
                   ...cv,
-                  skills: [...cv.skills, { name: '', level: 3, category: 'Technical' }]
+                  skills: [...cv.skills, { category: '', items: [] }]
                 })}
-                addLabel="Add Skill"
+                addLabel="Add Group"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm text-gray-500">Add your technical and soft skills</p>
+                  <p className="text-sm text-gray-500">Organize skills by category (e.g. Languages, Backend, AI/ML)</p>
                   <AIButton
                     onClick={handleGenerateSkills}
                     loading={generatingSkills}
@@ -1766,54 +1791,78 @@ export default function CVEditor() {
                 {cv.skills.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <Code className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                    <p>No skills added yet</p>
+                    <p>No skill groups added yet</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {cv.skills.map((skill, index) => (
-                      <div key={index} className="bg-gray-50/50 rounded-xl border border-gray-200/50 p-4 group">
-                        <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="space-y-4">
+                    {cv.skills.map((group, gIndex) => (
+                      <div key={gIndex} className="bg-gray-50/50 rounded-xl border border-gray-200/50 p-4 group/skillgroup">
+                        <div className="flex items-center justify-between gap-2 mb-3">
                           <input
                             type="text"
-                            value={skill.name}
+                            value={group.category}
                             onChange={(e) => {
                               const newSkills = [...cv.skills];
-                              newSkills[index].name = e.target.value;
+                              newSkills[gIndex] = { ...newSkills[gIndex], category: e.target.value };
                               setCV({ ...cv, skills: newSkills });
                             }}
-                            placeholder="Skill name"
+                            placeholder="Category name (e.g. Languages, Backend, DevOps)"
                             className="flex-1 px-3 py-2 rounded-lg border border-gray-200 bg-white/80 
-                              focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-sm"
+                              focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-sm font-semibold"
                           />
                           <button
                             onClick={() => {
                               const newSkills = [...cv.skills];
-                              newSkills.splice(index, 1);
+                              newSkills.splice(gIndex, 1);
                               setCV({ ...cv, skills: newSkills });
                             }}
                             className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 
-                              rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                              rounded-lg transition-colors opacity-0 group-hover/skillgroup:opacity-100"
+                            title="Remove group"
                           >
-                            <X className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={skill.level}
-                            onChange={(e) => {
-                              const newSkills = [...cv.skills];
-                              newSkills[index].level = parseInt(e.target.value);
-                              setCV({ ...cv, skills: newSkills });
+                        <div className="flex flex-wrap gap-2 items-center">
+                          {(group.items || []).map((item, iIndex) => (
+                            <span
+                              key={iIndex}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-white rounded-lg border border-gray-200 text-sm text-gray-700"
+                            >
+                              {item}
+                              <button
+                                onClick={() => {
+                                  const newSkills = [...cv.skills];
+                                  const newItems = [...(newSkills[gIndex].items || [])];
+                                  newItems.splice(iIndex, 1);
+                                  newSkills[gIndex] = { ...newSkills[gIndex], items: newItems };
+                                  setCV({ ...cv, skills: newSkills });
+                                }}
+                                className="text-gray-400 hover:text-red-500 transition-colors ml-0.5"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          ))}
+                          <input
+                            type="text"
+                            placeholder="Add skill..."
+                            className="px-3 py-1.5 rounded-lg border border-dashed border-gray-300 bg-white/50 
+                              focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-sm w-32"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ',') {
+                                e.preventDefault();
+                                const value = (e.target as HTMLInputElement).value.trim();
+                                if (value) {
+                                  const newSkills = [...cv.skills];
+                                  const newItems = [...(newSkills[gIndex].items || []), value];
+                                  newSkills[gIndex] = { ...newSkills[gIndex], items: newItems };
+                                  setCV({ ...cv, skills: newSkills });
+                                  (e.target as HTMLInputElement).value = '';
+                                }
+                              }
                             }}
-                            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 bg-white/80 
-                              focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-sm"
-                          >
-                            <option value={1}>Beginner</option>
-                            <option value={2}>Intermediate</option>
-                            <option value={3}>Advanced</option>
-                            <option value={4}>Expert</option>
-                            <option value={5}>Master</option>
-                          </select>
+                          />
                         </div>
                       </div>
                     ))}
@@ -2102,10 +2151,41 @@ export default function CVEditor() {
                 <div className="p-2 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 text-violet-600">
                   <Eye className="h-4 w-4" />
                 </div>
-                <h3 className="font-semibold text-gray-900">Live Preview</h3>
+                <h3 className="font-semibold text-gray-900">
+                  {atsPreviewMode !== 'off' ? `ATS ${atsPreviewMode === 'cv' ? 'CV' : 'Resume'} Preview` : 'Live Preview'}
+                </h3>
               </div>
               <div className="flex items-center gap-2">
-                {/* Template Selector */}
+                {/* ATS Preview Toggle */}
+                <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden text-xs">
+                  <button
+                    onClick={() => handleAtsPreviewToggle('off')}
+                    className={`px-2.5 py-1.5 font-medium transition-colors ${
+                      atsPreviewMode === 'off' ? 'bg-violet-100 text-violet-700' : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    Styled
+                  </button>
+                  <button
+                    onClick={() => handleAtsPreviewToggle('cv')}
+                    className={`px-2.5 py-1.5 font-medium transition-colors border-l border-gray-200 ${
+                      atsPreviewMode === 'cv' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    ATS CV
+                  </button>
+                  <button
+                    onClick={() => handleAtsPreviewToggle('resume')}
+                    className={`px-2.5 py-1.5 font-medium transition-colors border-l border-gray-200 ${
+                      atsPreviewMode === 'resume' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    ATS Resume
+                  </button>
+                </div>
+
+                {/* Template Selector - only shown in styled mode */}
+                {atsPreviewMode === 'off' && (
                 <div className="w-48">
                   <TemplateDropdown
                     selectedTemplate={cv.template || 'professional'}
@@ -2113,8 +2193,10 @@ export default function CVEditor() {
                     targetRole={cv.target_role}
                   />
                 </div>
+                )}
                 
                 {/* Accent Color Picker */}
+                {atsPreviewMode === 'off' && (
                 <div className="relative">
                   <button
                     onClick={() => setShowColorPicker(!showColorPicker)}
@@ -2125,8 +2207,10 @@ export default function CVEditor() {
                     title="Change accent color"
                   />
                 </div>
+                )}
 
                 {/* Black & White Toggle */}
+                {atsPreviewMode === 'off' && (
                 <button
                   onClick={handleGrayscaleToggle}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
@@ -2139,8 +2223,10 @@ export default function CVEditor() {
                   {cv.is_grayscale && <Check className="w-3 h-3" />}
                   B&W
                 </button>
+                )}
                 
                 {/* Section Order Button */}
+                {atsPreviewMode === 'off' && (
                 <button
                   onClick={() => setShowSectionOrderPanel(!showSectionOrderPanel)}
                   className={`p-2 rounded-xl transition-colors ${
@@ -2152,11 +2238,12 @@ export default function CVEditor() {
                 >
                   <Settings2 className="h-4 w-4" />
                 </button>
+                )}
               </div>
             </div>
 
             {/* Section Order Panel */}
-            {showSectionOrderPanel && (
+            {atsPreviewMode === 'off' && showSectionOrderPanel && (
               <div className="bg-white border-x border-gray-200/50 px-4 py-3">
                 <p className="text-xs text-gray-500 mb-2">Drag sections to reorder:</p>
                 <div className="space-y-1">
@@ -2186,9 +2273,31 @@ export default function CVEditor() {
 
             {/* Preview Content */}
             <div className="flex-1 bg-white/80 backdrop-blur-xl rounded-b-2xl border border-gray-200/50 border-t-0 overflow-y-auto p-4">
-              <div ref={cvRef} className="transform scale-[0.85] origin-top">
-                {renderTemplate()}
-              </div>
+              {atsPreviewMode !== 'off' ? (
+                atsCompiling ? (
+                  <div className="flex items-center justify-center h-full min-h-[600px]">
+                    <div className="text-center space-y-3">
+                      <Loader2 className="h-8 w-8 text-indigo-600 animate-spin mx-auto" />
+                      <p className="text-sm text-gray-600">Compiling ATS {atsPreviewMode === 'cv' ? 'CV' : 'Resume'}...</p>
+                    </div>
+                  </div>
+                ) : atsPreviewUrl ? (
+                  <iframe
+                    src={atsPreviewUrl}
+                    className="w-full border-0 rounded-lg"
+                    style={{ height: '1100px' }}
+                    title={`ATS ${atsPreviewMode === 'cv' ? 'CV' : 'Resume'} Preview`}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full min-h-[600px] text-gray-400 text-sm">
+                    ATS preview unavailable — LaTeX compiler not reachable.
+                  </div>
+                )
+              ) : (
+                <div ref={cvRef} className="transform scale-[0.85] origin-top">
+                  {renderTemplate()}
+                </div>
+              )}
             </div>
           </div>
         )}

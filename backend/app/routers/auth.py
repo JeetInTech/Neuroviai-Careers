@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
 from ..models import SignUpRequest, SignInRequest, AuthResponse, PasswordResetRequest
 from ..database import get_supabase_client, get_supabase_admin
+from ..config import settings
+from pydantic import BaseModel
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,20 +23,28 @@ async def signup(request: SignUpRequest):
                 detail="Username already taken"
             )
         
-        # Also check if username is reserved in user_metadata of unverified users
-        # This prevents username squatting by unverified accounts
+        # Check if email is already registered in auth
+        try:
+            existing_users = supabase.auth.admin.list_users()
+            for u in existing_users:
+                if hasattr(u, 'email') and u.email == request.email:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Email already registered. Please sign in or reset your password."
+                    )
+        except HTTPException:
+            raise
+        except Exception:
+            pass  # If listing fails, continue with signup
         
-        # Use regular signup flow (sends confirmation email automatically)
-        # Note: Using the regular client, not admin, to trigger email
-        regular_client = get_supabase_client()
-        auth_response = regular_client.auth.sign_up({
+        # Use admin API to create user with auto-confirm (no email verification needed)
+        auth_response = supabase.auth.admin.create_user({
             "email": request.email,
             "password": request.password,
-            "options": {
-                "data": {
-                    "username": request.username.lower(),
-                    "display_name": request.display_name or request.username
-                }
+            "email_confirm": True,
+            "user_metadata": {
+                "username": request.username.lower(),
+                "display_name": request.display_name or request.username
             }
         })
         
@@ -46,13 +56,9 @@ async def signup(request: SignUpRequest):
                 detail="Failed to create user"
             )
         
-        # NOTE: Profile is NOT created here. It will be created automatically
-        # when the user first accesses /profile/me AFTER email verification.
-        # This ensures only verified users have profiles in the database.
-        
         return AuthResponse(
             success=True,
-            message="Account created successfully. Please check your email to confirm.",
+            message="Account created successfully! You can now sign in.",
             user_id=auth_response.user.id
         )
         
@@ -84,14 +90,14 @@ async def signin(request: SignInRequest):
         if "@" not in request.email_or_username:
             profile = supabase_admin.table("profiles").select("email").eq(
                 "username", request.email_or_username.lower()
-            ).single().execute()
+            ).execute()
             
-            if not profile.data or not profile.data.get("email"):
+            if not profile.data or len(profile.data) == 0 or not profile.data[0].get("email"):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid username or password"
                 )
-            email = profile.data["email"]
+            email = profile.data[0]["email"]
         
         # Sign in with email and password
         auth_response = supabase.auth.sign_in_with_password({
@@ -103,13 +109,6 @@ async def signin(request: SignInRequest):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials"
-            )
-        
-        # Check if email is confirmed
-        if not auth_response.user.email_confirmed_at:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please verify your email before signing in. Check your inbox for the confirmation link."
             )
         
         return AuthResponse(
@@ -156,15 +155,87 @@ async def resend_confirmation(request: PasswordResetRequest):
 
 @router.post("/reset-password")
 async def reset_password(request: PasswordResetRequest):
-    """Send password reset email"""
+    """Send password reset email with redirect to frontend reset page"""
     supabase = get_supabase_client()
     
     try:
-        supabase.auth.reset_password_email(request.email)
+        redirect_url = f"{settings.FRONTEND_URL}/reset-password"
+        supabase.auth.reset_password_email(request.email, {
+            "redirect_to": redirect_url
+        })
         return {"success": True, "message": "Password reset email sent"}
     except Exception as e:
+        logger.error(f"Reset password error: {str(e)}")
         # Don't reveal if email exists or not
         return {"success": True, "message": "If the email exists, a reset link will be sent"}
+
+
+class UpdatePasswordRequest(BaseModel):
+    access_token: str
+    new_password: str
+
+
+@router.post("/update-password")
+async def update_password(request: UpdatePasswordRequest):
+    """Update user password using the access token from the reset link"""
+    supabase = get_supabase_client()
+    
+    try:
+        # Set the session using the access token from the reset link
+        session = supabase.auth.set_session(request.access_token, "")
+        
+        if not session or not session.user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired reset token"
+            )
+        
+        # Update the password
+        user_response = supabase.auth.update_user({
+            "password": request.new_password
+        })
+        
+        if not user_response or not user_response.user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to update password"
+            )
+        
+        # Return session tokens so user can stay logged in if they choose
+        return AuthResponse(
+            success=True,
+            message="Password updated successfully",
+            user_id=user_response.user.id,
+            access_token=session.session.access_token if session.session else None,
+            refresh_token=session.session.refresh_token if session.session else None,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Update password error: {str(e)}")
+        
+        # Try alternative: use admin API to update by user ID from token
+        try:
+            supabase_admin = get_supabase_admin()
+            # Verify the token to get user info
+            user_resp = supabase.auth.get_user(request.access_token)
+            if user_resp and user_resp.user:
+                supabase_admin.auth.admin.update_user_by_id(
+                    user_resp.user.id,
+                    {"password": request.new_password}
+                )
+                return AuthResponse(
+                    success=True,
+                    message="Password updated successfully. Please sign in with your new password.",
+                    user_id=user_resp.user.id,
+                )
+        except Exception as inner_e:
+            logger.error(f"Admin update password fallback error: {str(inner_e)}")
+        
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to update password. The reset link may have expired. Please request a new one."
+        )
 
 @router.post("/refresh")
 async def refresh_token(refresh_token: str):

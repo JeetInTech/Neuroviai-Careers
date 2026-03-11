@@ -374,30 +374,84 @@ def parse_education(content: str) -> list:
     return education[:5]  # Limit to 5 education entries
 
 def parse_skills(content: str) -> list:
-    """Parse skills section into structured data"""
-    skills = []
+    """Parse skills section into grouped skill data.
+    
+    Recognises two common formats:
+    1. Category-based (tabular or colon-separated):
+       Languages: Python, JavaScript, TypeScript
+       AI / ML: LangChain, Transformers, ...
+    2. Flat list (comma/bullet separated) → placed under 'Technical'.
+    
+    Returns list of {category: str, items: [str]}
+    """
     if not content:
-        return skills
-    
-    # Common skill delimiters
-    text = content.replace('\n', ', ')
-    
-    # Split by various delimiters
-    skill_items = re.split(r'[,;•\-\|\n●○]+', text)
-    
-    for item in skill_items:
-        item = item.strip()
-        if item and len(item) > 1 and len(item) < 50:
-            # Skip common non-skill words
-            skip_words = ['and', 'or', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with']
-            if item.lower() not in skip_words:
-                skills.append({
-                    'name': item,
-                    'level': 3,  # Default middle level
-                    'category': 'technical'
-                })
-    
-    return skills[:30]  # Limit to 30 skills
+        return []
+
+    lines = content.strip().split('\n')
+    groups: list[dict] = []
+    current_category = None
+    current_items: list[str] = []
+
+    # Pattern: "Category:" or "Category  item1, item2" (tabular with 2+ spaces or | separator)
+    category_pattern = re.compile(
+        r'^([A-Za-z][A-Za-z &/\-]+?)\s*[:|\t]\s*(.+)$'
+    )
+    # Also match tabular format: "Category    item1, item2" (2+ spaces between)
+    tabular_pattern = re.compile(
+        r'^([A-Za-z][A-Za-z &/\-]+?)\s{2,}(.+)$'
+    )
+
+    skip_words = {'and', 'or', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'etc', 'including'}
+
+    def split_items(text: str) -> list[str]:
+        """Split a comma/semicolon/bullet separated skill string into clean items."""
+        parts = re.split(r'[,;•●○\|]+', text)
+        items = []
+        for p in parts:
+            p = p.strip().strip('-').strip('*').strip()
+            if p and len(p) > 1 and len(p) < 80 and p.lower() not in skip_words:
+                items.append(p)
+        return items
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Try category: items pattern
+        match = category_pattern.match(line) or tabular_pattern.match(line)
+        if match:
+            # Save previous category if exists
+            if current_category and current_items:
+                groups.append({'category': current_category, 'items': current_items})
+            
+            current_category = match.group(1).strip()
+            current_items = split_items(match.group(2))
+        elif current_category:
+            # Continuation line for current category
+            new_items = split_items(line)
+            if new_items:
+                current_items.extend(new_items)
+        else:
+            # No category detected yet — flat items
+            new_items = split_items(line)
+            if new_items:
+                current_items.extend(new_items)
+
+    # Save last group
+    if current_category and current_items:
+        groups.append({'category': current_category, 'items': current_items})
+    elif current_items:
+        # All flat items, no categories detected
+        groups.append({'category': 'Technical', 'items': current_items})
+
+    # If nothing was parsed as grouped, fall back to flat
+    if not groups:
+        all_items = split_items(content.replace('\n', ', '))
+        if all_items:
+            groups.append({'category': 'Technical', 'items': all_items[:40]})
+
+    return groups
 
 def parse_projects(content: str) -> list:
     """Parse projects section into structured data"""
@@ -573,7 +627,7 @@ def parse_cv_document(text: str) -> dict:
         'projects': parse_projects(extract_section_content(text, 'projects', SECTION_HEADERS)),
         'certifications': parse_certifications(extract_section_content(text, 'certifications', SECTION_HEADERS)),
         'languages': parse_languages(extract_section_content(text, 'languages', SECTION_HEADERS)),
-        'raw_text': text[:5000]  # Include raw text for reference (limited)
+        'raw_text': text[:10000]  # Include raw text for reference (limited)
     }
     
     return result
@@ -759,7 +813,10 @@ async def parse_document(
 
 async def parse_cv_with_ai(text: str) -> dict:
     """Use AI to parse CV text for better accuracy"""
-    prompt = f"""Parse this CV/resume text and extract the following information in JSON format:
+    # Send up to 15000 chars to handle multi-page CVs
+    cv_text = text[:15000]
+    prompt = f"""Parse this CV/resume text and extract ALL the following information in JSON format.
+Extract EVERY experience entry, project, certification, and skill category — do NOT skip any.
 
 {{
     "personal_info": {{
@@ -771,56 +828,66 @@ async def parse_cv_with_ai(text: str) -> dict:
         "linkedin_url": "",
         "github_url": "",
         "portfolio_url": "",
-        "summary": ""
+        "summary": "the professional summary or objective section text"
     }},
     "experience": [
         {{
-            "title": "",
-            "company": "",
-            "location": "",
+            "title": "job title",
+            "company": "company name",
+            "location": "city or Remote",
             "start_date": "YYYY-MM format",
             "end_date": "YYYY-MM format or empty if current",
             "current": true/false,
             "description": "",
-            "achievements": ["bullet point 1", "bullet point 2"]
+            "achievements": ["bullet point 1", "bullet point 2", "...extract ALL bullets"]
         }}
     ],
     "education": [
         {{
-            "degree": "",
-            "field_of_study": "",
-            "institution": "",
-            "location": "",
-            "start_date": "YYYY-MM format",
-            "end_date": "YYYY-MM format",
-            "gpa": "",
-            "description": "",
-            "achievements": []
+            "degree": "full degree name e.g. Bachelor of Technology (B.Tech) in Computer Science",
+            "field_of_study": "specialization or major",
+            "institution": "university/college name",
+            "location": "city, state",
+            "start_date": "YYYY-MM",
+            "end_date": "YYYY-MM",
+            "gpa": "e.g. 8.0 / 10.0",
+            "description": "relevant coursework or notes",
+            "achievements": ["coursework items", "academic focus areas"]
         }}
     ],
     "skills": [
-        {{"name": "", "level": 3, "category": "technical/soft"}}
+        {{"category": "Languages", "items": ["Python", "JavaScript", "..."]}},
+        {{"category": "AI / ML", "items": ["LangChain", "..."]}},
+        {{"category": "Backend", "items": ["FastAPI", "..."]}},
+        {{"category": "Frontend", "items": ["React", "..."]}},
+        {{"category": "Databases", "items": ["PostgreSQL", "..."]}},
+        {{"category": "DevOps / Cloud", "items": ["Docker", "AWS", "..."]}},
+        {{"category": "Tools", "items": ["Git", "..."]}}
     ],
     "projects": [
         {{
-            "name": "",
-            "description": "",
-            "technologies": [],
-            "url": "",
-            "github_url": "",
-            "highlights": []
+            "name": "project name",
+            "description": "one-line description",
+            "technologies": ["tech1", "tech2"],
+            "url": "live url if any",
+            "github_url": "github url if any",
+            "highlights": ["bullet point 1", "bullet point 2", "...extract ALL bullets"]
         }}
     ],
     "certifications": [
-        {{"name": "", "issuer": "", "date": "", "credential_id": "", "url": ""}}
+        {{"name": "cert name", "issuer": "issuing org", "date": "", "credential_id": "", "url": ""}}
     ],
     "languages": [
-        {{"name": "", "proficiency": "native/fluent/professional/intermediate/basic"}}
+        {{"name": "English", "proficiency": "professional"}},
+        {{"name": "Hindi", "proficiency": "native"}}
     ]
 }}
 
+IMPORTANT: For skills, group them by meaningful categories (Languages, AI/ML, Backend, Frontend, Databases, DevOps, Tools, etc). Each category has an array of skill names. Do NOT use flat name/level format.
+Extract ALL experiences, ALL projects, ALL certifications — do not truncate.
+
 CV Text:
-{text[:6000]}
+{cv_text}
 
 Return ONLY valid JSON, no explanation."""
 
@@ -829,7 +896,7 @@ Return ONLY valid JSON, no explanation."""
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
-            max_tokens=4000
+            max_tokens=8000
         )
         
         result = response.choices[0].message.content.strip()
@@ -890,13 +957,24 @@ def merge_cv_data(rule_based: dict, ai_parsed: dict) -> dict:
         if edu_score(ai_edu) > edu_score(rule_edu):
             merged['education'] = ai_edu
     
-    # Merge skills - combine both lists
+    # Merge skills — new grouped format {category, items}
+    # Prefer AI skills if they have more categories or more total items
     if 'skills' in ai_parsed and ai_parsed['skills']:
-        existing_names = {s['name'].lower() for s in merged.get('skills', [])}
-        for skill in ai_parsed['skills']:
-            if skill.get('name') and skill['name'].lower() not in existing_names:
-                merged['skills'].append(skill)
-                existing_names.add(skill['name'].lower())
+        ai_skills = ai_parsed['skills']
+        rule_skills = merged.get('skills', [])
+        
+        def skills_item_count(skill_list):
+            return sum(len(s.get('items', [])) for s in skill_list if isinstance(s, dict) and s.get('items'))
+        
+        if skills_item_count(ai_skills) >= skills_item_count(rule_skills):
+            merged['skills'] = ai_skills
+        else:
+            # Merge: add AI categories not present in rule-based
+            existing_cats = {s.get('category', '').lower() for s in rule_skills}
+            for sg in ai_skills:
+                if sg.get('category', '').lower() not in existing_cats:
+                    rule_skills.append(sg)
+            merged['skills'] = rule_skills
     
     # Prefer AI for projects if available
     if 'projects' in ai_parsed and ai_parsed['projects'] and len(ai_parsed['projects']) >= len(merged.get('projects', [])):
@@ -914,214 +992,13 @@ def merge_cv_data(rule_based: dict, ai_parsed: dict) -> dict:
 
 
 # ============================================
-# PDF GENERATION MODELS
-# ============================================
-
-class PdfPersonalInfo(BaseModel):
-    full_name: str = ""
-    email: str = ""
-    phone: str = ""
-    address: str = ""
-    city: str = ""
-    country: str = ""
-    summary: str = ""
-    linkedin_url: Optional[str] = None
-    github_url: Optional[str] = None
-    portfolio_url: Optional[str] = None
-    photo_url: Optional[str] = None
-    
-    class Config:
-        extra = "ignore"
-
-
-class PdfExperience(BaseModel):
-    title: str = ""
-    company: str = ""
-    location: str = ""
-    start_date: str = ""
-    end_date: str = ""
-    current: bool = False
-    description: str = ""
-    achievements: List[str] = []
-    keywords: List[str] = []
-    
-    class Config:
-        extra = "ignore"
-
-
-class PdfEducation(BaseModel):
-    degree: str = ""
-    field_of_study: str = ""
-    institution: str = ""
-    location: str = ""
-    start_date: str = ""
-    end_date: str = ""
-    gpa: str = ""
-    description: str = ""
-    achievements: List[str] = []
-    
-    class Config:
-        extra = "ignore"
-
-
-class PdfSkill(BaseModel):
-    name: str = ""
-    level: int = 3
-    category: str = ""
-    
-    class Config:
-        extra = "ignore"
-
-
-class PdfProject(BaseModel):
-    name: str = ""
-    description: str = ""
-    technologies: List[str] = []
-    url: str = ""
-    github_url: str = ""
-    highlights: List[str] = []
-    
-    class Config:
-        extra = "ignore"
-
-
-class PdfCertification(BaseModel):
-    name: str = ""
-    issuer: str = ""
-    date: str = ""
-    url: str = ""
-    
-    class Config:
-        extra = "ignore"
-
-
-class PdfLanguage(BaseModel):
-    name: str = ""
-    proficiency: str = ""
-    
-    class Config:
-        extra = "ignore"
-
-
-class CVPdfRequest(BaseModel):
-    template: Optional[str] = "professional"
-    target_role: Optional[str] = None
-    personal_info: PdfPersonalInfo
-    experience: List[PdfExperience] = []
-    education: List[PdfEducation] = []
-    skills: List[PdfSkill] = []
-    projects: List[PdfProject] = []
-    certifications: List[PdfCertification] = []
-    languages: List[PdfLanguage] = []
-    accent_color: Optional[str] = "#4F46E5"
-    is_grayscale: Optional[bool] = False
-    
-    class Config:
-        extra = "ignore"  # Ignore any extra fields from frontend
-
-
-@router.post("/export-pdf")
-async def generate_cv_pdf(
-    request: CVPdfRequest,
-    authorization: Optional[str] = Header(None)
-):
-    """Generate PDF from CV data with selectable text"""
-    try:
-        # Auth is optional — allow unauthenticated access for ATS builder
-        if authorization:
-            try:
-                user = get_current_user(authorization)
-            except Exception:
-                pass  # Continue without auth
-        
-        # Import PDF service
-        from ..services.pdf_service import generate_pdf
-        
-        # Convert to dict for PDF generation
-        cv_data = {
-            "template": request.template,
-            "personal_info": request.personal_info.model_dump(),
-            "experience": [e.model_dump() for e in request.experience],
-            "education": [e.model_dump() for e in request.education],
-            "skills": [s.model_dump() for s in request.skills],
-            "projects": [p.model_dump() for p in request.projects],
-            "certifications": [c.model_dump() for c in request.certifications],
-            "languages": [l.model_dump() for l in request.languages],
-            "accent_color": request.accent_color,
-            "is_grayscale": request.is_grayscale
-        }
-        
-        # Generate PDF
-        pdf_bytes = generate_pdf(cv_data)
-        
-        # Return PDF as response
-        filename = f"{request.personal_info.full_name or 'cv'}_resume.pdf"
-        filename = filename.replace(" ", "_")
-        
-        return Response(
-            content=pdf_bytes,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": f'attachment; filename="{filename}"'
-            }
-        )
-        
-    except Exception as e:
-        logger.error(f"PDF generation error: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
-
-
-@router.post("/export-pdf/{cv_id}")
-async def generate_pdf_from_saved_cv(
-    cv_id: str,
-    authorization: str = Header(...)
-):
-    """Generate PDF from a saved CV by ID"""
-    try:
-        user = get_current_user(authorization)
-        supabase = get_supabase_admin()
-        
-        # Import PDF service
-        from ..services.pdf_service import generate_pdf
-        
-        # Fetch the CV
-        result = supabase.table("cvs").select("*").eq("id", cv_id).eq("user_id", user.id).execute()
-        
-        if not result.data:
-            raise HTTPException(status_code=404, detail="CV not found")
-        
-        cv_data = result.data[0]
-        
-        # Generate PDF
-        pdf_bytes = generate_pdf(cv_data)
-        
-        # Get filename from personal info
-        personal_info = cv_data.get("personal_info", {})
-        filename = f"{personal_info.get('full_name', 'cv')}_resume.pdf"
-        filename = filename.replace(" ", "_")
-        
-        return Response(
-            content=pdf_bytes,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": f'attachment; filename="{filename}"'
-            }
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"PDF generation error: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
-
-
-# ============================================
 # LaTeX Compilation Endpoint
 # ============================================
 
 class CompileLatexRequest(BaseModel):
     latex_source: str
     filename: Optional[str] = "resume"
+    enforce_single_page: Optional[bool] = False
 
 def find_pdflatex():
     """Find pdflatex executable on the system"""
@@ -1207,6 +1084,16 @@ async def compile_latex(request: CompileLatexRequest):
             # Read the generated PDF
             with open(pdf_file, "rb") as f:
                 pdf_bytes = f.read()
+            
+            # Enforce single-page if requested
+            if request.enforce_single_page:
+                with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+                    page_count = len(pdf.pages)
+                if page_count > 1:
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Resume exceeds 1 page ({page_count} pages). Reduce content and try again."
+                    )
             
             filename = f"{request.filename or 'resume'}.pdf".replace(" ", "_")
             

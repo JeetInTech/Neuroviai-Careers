@@ -56,10 +56,8 @@ interface Experience {
 }
 
 interface Skill {
-  name: string;
-  level: number;
   category: string;
-  years_of_experience?: number;
+  items: string[];
 }
 
 interface Language {
@@ -240,6 +238,19 @@ class ApiClient {
     });
   }
 
+  async updatePassword(accessToken: string, newPassword: string) {
+    return this.request<{
+      success: boolean;
+      message: string;
+      user_id?: string;
+      access_token?: string;
+      refresh_token?: string;
+    }>('/auth/update-password', {
+      method: 'POST',
+      body: JSON.stringify({ access_token: accessToken, new_password: newPassword }),
+    });
+  }
+
   // Profile endpoints
   async getMyProfile() {
     return this.request<Profile>('/profile/me');
@@ -394,51 +405,19 @@ class ApiClient {
     });
   }
 
-  // PDF Export endpoint
-  async exportPDF(cvData: CVCreateData): Promise<Blob> {
-    const response = await fetch(`${this.baseUrl}/document/export-pdf`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.accessToken && { 'Authorization': `Bearer ${this.accessToken}` }),
-      },
-      body: JSON.stringify(cvData),
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || 'Failed to generate PDF');
-    }
-    
-    return response.blob();
-  }
-
-  // PDF Export by CV ID
-  async exportPDFById(cvId: string): Promise<Blob> {
-    const response = await fetch(`${this.baseUrl}/document/export-pdf/${cvId}`, {
-      method: 'POST',
-      headers: {
-        ...(this.accessToken && { 'Authorization': `Bearer ${this.accessToken}` }),
-      },
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || 'Failed to generate PDF');
-    }
-    
-    return response.blob();
-  }
-
   // LaTeX Compilation endpoint - compiles LaTeX source to PDF
-  async compileLaTeX(latexSource: string, filename?: string): Promise<Blob> {
+  async compileLaTeX(latexSource: string, filename?: string, enforceSinglePage?: boolean): Promise<Blob> {
     const response = await fetch(`${this.baseUrl}/document/compile-latex`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(this.accessToken && { 'Authorization': `Bearer ${this.accessToken}` }),
       },
-      body: JSON.stringify({ latex_source: latexSource, filename }),
+      body: JSON.stringify({
+        latex_source: latexSource,
+        filename,
+        enforce_single_page: enforceSinglePage || false,
+      }),
     });
     
     if (!response.ok) {

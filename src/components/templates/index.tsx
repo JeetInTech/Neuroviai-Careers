@@ -237,16 +237,11 @@ export const ProfessionalTemplate: React.FC<TemplateProps> = ({ cv }) => {
             Skills
           </h2>
           <div className="space-y-2">
-            {Object.entries(
-              cv.skills.reduce((acc, skill) => {
-                const cat = skill.category || 'Other';
-                if (!acc[cat]) acc[cat] = [];
-                acc[cat].push(skill.name);
-                return acc;
-              }, {} as Record<string, string[]>)
-            ).map(([category, skills], idx) => (
+            {cv.skills
+              .filter(g => g.category && g.items?.length > 0)
+              .map((group, idx) => (
               <p key={idx} className="text-sm text-gray-700">
-                <span className="font-semibold" style={{ color: accentColor }}>{category}:</span> {skills.join(', ')}
+                <span className="font-semibold" style={{ color: accentColor }}>{group.category}:</span> {group.items.join(', ')}
               </p>
             ))}
           </div>
@@ -369,15 +364,17 @@ export const TechFocusedTemplate: React.FC<TemplateProps> = ({ cv }) => {
         <section className="mb-5">
           <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Technical Skills</h2>
           <div className="flex flex-wrap gap-2 items-start">
-            {cv.skills.map((skill, idx) => (
-              <span 
-                key={idx} 
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap ${bgTint} ${borderTint}`}
-                style={{ color: accentColor }}
-              >
-                {skill.name}
-              </span>
-            ))}
+            {cv.skills.flatMap((group, gIdx) =>
+              group.items?.map((item, idx) => (
+                <span 
+                  key={`${gIdx}-${idx}`} 
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap ${bgTint} ${borderTint}`}
+                  style={{ color: accentColor }}
+                >
+                  {item}
+                </span>
+              )) || []
+            )}
           </div>
         </section>
       )}
@@ -538,15 +535,17 @@ export const MinimalTemplate: React.FC<TemplateProps> = ({ cv }) => {
         <section className="mb-5">
           <h2 className="text-sm md:text-base font-bold mb-2 uppercase tracking-wide" style={{ color: accentColor }}>Skills</h2>
           <div className="flex flex-wrap gap-2 items-start">
-            {cv.skills.map((skill, idx) => (
-              <span 
-                key={idx} 
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap ${bgTint} ${borderTint}`}
-                style={{ color: accentColor }}
-              >
-                {skill.name}
-              </span>
-            ))}
+            {cv.skills.flatMap((group, gIdx) =>
+              group.items?.map((item, idx) => (
+                <span 
+                  key={`${gIdx}-${idx}`} 
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap ${bgTint} ${borderTint}`}
+                  style={{ color: accentColor }}
+                >
+                  {item}
+                </span>
+              )) || []
+            )}
           </div>
         </section>
       )}
@@ -791,16 +790,11 @@ export const OrderedTemplate: React.FC<TemplateProps & { templateName?: string }
           <section key="skills" className="mb-6">
             <SectionHeader title="Skills" />
             <div className="space-y-2">
-              {Object.entries(
-                cv.skills.reduce((acc, skill) => {
-                  const cat = skill.category || 'Other';
-                  if (!acc[cat]) acc[cat] = [];
-                  acc[cat].push(skill.name);
-                  return acc;
-                }, {} as Record<string, string[]>)
-              ).map(([category, skills], idx) => (
+              {cv.skills
+                .filter(g => g.category && g.items?.length > 0)
+                .map((group, idx) => (
                 <p key={idx} className="text-sm text-gray-700">
-                  <span className="font-semibold">{category}:</span> {skills.join(', ')}
+                  <span className="font-semibold">{group.category}:</span> {group.items.join(', ')}
                 </p>
               ))}
             </div>

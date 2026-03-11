@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
 import type { CV, LaTeXExportOptions } from '../lib/database.types';
-import { Download, Share2, Save, ArrowLeft, Eye, Palette, Camera, X, Check } from 'lucide-react';
+import { Download, Share2, Save, ArrowLeft, Eye, Palette, Camera, X, Check, FileText, Loader2 } from 'lucide-react';
 import ShareCVDialog from '../components/ShareCVDialog';
 import { downloadLaTeX, getRecommendedTemplate, generateLaTeX, generateATSCVLaTeX, generateATSResumeLaTeX, downloadATSCVLaTeX, downloadATSResumeLaTeX } from '../lib/latex-generator';
 import { getTemplateComponent } from '../components/templates';
@@ -45,6 +45,11 @@ export default function CVEditor() {
   
   // Color customization state
   const [showColorPicker, setShowColorPicker] = useState(false);
+
+  // ATS preview state
+  const [atsPreviewMode, setAtsPreviewMode] = useState<'off' | 'cv' | 'resume'>('off');
+  const [atsPreviewUrl, setAtsPreviewUrl] = useState<string | null>(null);
+  const [atsCompiling, setAtsCompiling] = useState(false);
 
   const { template, isTemplate, cvData } = location.state || {};
 
@@ -215,25 +220,7 @@ export default function CVEditor() {
 
       const latexSource = generateLaTeX(cv, { template: latexTemplate });
 
-      // Try LaTeX compilation first for proper template-specific PDF
-      try {
-        const pdfBlob = await api.compileLaTeX(latexSource, cv.personal_info.full_name?.replace(/\s+/g, '_') || 'resume');
-        const url = window.URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${cv.personal_info.full_name || 'cv'}_resume.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        setShowDownloadMenu(false);
-        return;
-      } catch {
-        // LaTeX compiler not available, fall back to FPDF
-      }
-
-      // Fallback: use FPDF-based PDF generation
-      const pdfBlob = await api.exportPDFById(cv.id);
+      const pdfBlob = await api.compileLaTeX(latexSource, cv.personal_info.full_name?.replace(/\s+/g, '_') || 'resume');
       const url = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -242,11 +229,10 @@ export default function CVEditor() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
       setShowDownloadMenu(false);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      setError('Failed to download PDF. Please try again.');
+      setError('Failed to download PDF. LaTeX compilation may be unavailable.');
     }
   };
 
@@ -282,7 +268,7 @@ export default function CVEditor() {
       setError('');
       const latexSource = generateATSResumeLaTeX(cv);
       try {
-        const pdfBlob = await api.compileLaTeX(latexSource, `${cv.personal_info.full_name?.replace(/\s+/g, '_') || 'cv'}_ATS_Resume`);
+        const pdfBlob = await api.compileLaTeX(latexSource, `${cv.personal_info.full_name?.replace(/\s+/g, '_') || 'cv'}_ATS_Resume`, true);
         const url = window.URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
@@ -346,8 +332,8 @@ export default function CVEditor() {
 
           <div class="section">
             <div class="section-title">Skills</div>
-            ${cv.skills.map(skill => `
-              <p>${skill.name} - ${skill.category} (${skill.level})</p>
+            ${cv.skills.map(group => `
+              <p><strong>${group.category}:</strong> ${group.items.join(', ')}</p>
             `).join('')}
           </div>
         </body>
@@ -399,6 +385,35 @@ export default function CVEditor() {
 
     downloadLaTeX(cv, undefined, { template: latexTemplate });
     setShowDownloadMenu(false);
+  };
+
+  const handleAtsPreviewToggle = async (mode: 'off' | 'cv' | 'resume') => {
+    if (mode === 'off') {
+      setAtsPreviewMode('off');
+      if (atsPreviewUrl) {
+        URL.revokeObjectURL(atsPreviewUrl);
+        setAtsPreviewUrl(null);
+      }
+      return;
+    }
+    if (mode === atsPreviewMode) return;
+    if (!cv) return;
+    setAtsPreviewMode(mode);
+    setAtsCompiling(true);
+    setAtsPreviewUrl(null);
+    try {
+      const latex = mode === 'cv'
+        ? generateATSCVLaTeX(cv)
+        : generateATSResumeLaTeX(cv);
+      const blob = await api.compileLaTeX(latex, 'preview.pdf', mode === 'resume');
+      const url = URL.createObjectURL(blob);
+      setAtsPreviewUrl(url);
+    } catch (err) {
+      console.error('ATS preview compilation failed:', err);
+      setAtsPreviewUrl(null);
+    } finally {
+      setAtsCompiling(false);
+    }
   };
 
   // Add template selection handling
@@ -543,8 +558,47 @@ export default function CVEditor() {
           </div>
         </div>
 
-        {/* Template Selector - Show in view mode */}
+        {/* ATS Preview Toggle - Show in view mode */}
         {isViewMode && (
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-600 mr-1">Preview:</span>
+            <button
+              onClick={() => handleAtsPreviewToggle('off')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+                atsPreviewMode === 'off'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400'
+              }`}
+            >
+              Styled
+            </button>
+            <button
+              onClick={() => handleAtsPreviewToggle('cv')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+                atsPreviewMode === 'cv'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400'
+              }`}
+            >
+              <FileText className="w-3 h-3 inline mr-1" />
+              ATS CV
+            </button>
+            <button
+              onClick={() => handleAtsPreviewToggle('resume')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+                atsPreviewMode === 'resume'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400'
+              }`}
+            >
+              <FileText className="w-3 h-3 inline mr-1" />
+              ATS Resume
+            </button>
+          </div>
+        )}
+
+        {/* Template Selector - Show in view mode */}
+        {isViewMode && atsPreviewMode === 'off' && (
           <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               {/* Template Selection */}
@@ -642,7 +696,29 @@ export default function CVEditor() {
         {/* CV Content */}
         <div ref={cvRef}>
           {isViewMode ? (
-            renderTemplate()
+            atsPreviewMode !== 'off' ? (
+              atsCompiling ? (
+                <div className="flex items-center justify-center min-h-[600px]">
+                  <div className="text-center space-y-3">
+                    <Loader2 className="h-8 w-8 text-indigo-600 animate-spin mx-auto" />
+                    <p className="text-sm text-gray-600">Compiling ATS {atsPreviewMode === 'cv' ? 'CV' : 'Resume'}...</p>
+                  </div>
+                </div>
+              ) : atsPreviewUrl ? (
+                <iframe
+                  src={atsPreviewUrl}
+                  className="w-full border-0 rounded-lg bg-white"
+                  style={{ height: '1100px' }}
+                  title={`ATS ${atsPreviewMode === 'cv' ? 'CV' : 'Resume'} Preview`}
+                />
+              ) : (
+                <div className="flex items-center justify-center min-h-[600px] text-gray-400 text-sm">
+                  ATS preview unavailable — LaTeX compiler not reachable.
+                </div>
+              )
+            ) : (
+              renderTemplate()
+            )
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Personal Info */}
@@ -1049,80 +1125,75 @@ export default function CVEditor() {
                   <button
                     onClick={() => setCV({
                       ...cv,
-                      skills: [...cv.skills, {
-                        name: '',
-                        level: 1,
-                        category: ''
-                      }]
+                      skills: [...cv.skills, { category: '', items: [] }]
                     })}
                     className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
                   >
-                    Add Skill
+                    Add Group
                   </button>
                 </div>
                 <div className="space-y-4">
-                  {cv.skills.map((skill, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex justify-between mb-4">
-                        <h4 className="text-sm font-medium text-gray-900">Skill #{index + 1}</h4>
+                  {cv.skills.map((group, gIndex) => (
+                    <div key={gIndex} className="border rounded-lg p-4">
+                      <div className="flex justify-between mb-3">
+                        <input
+                          type="text"
+                          value={group.category}
+                          onChange={(e) => {
+                            const newSkills = [...cv.skills];
+                            newSkills[gIndex] = { ...newSkills[gIndex], category: e.target.value };
+                            setCV({ ...cv, skills: newSkills });
+                          }}
+                          placeholder="Category (e.g., Languages, Frontend, DevOps)"
+                          className="text-sm font-medium text-gray-900 border-b border-gray-300 focus:border-indigo-500 focus:outline-none bg-transparent w-full"
+                        />
                         <button
                           onClick={() => {
                             const newSkills = [...cv.skills];
-                            newSkills.splice(index, 1);
+                            newSkills.splice(gIndex, 1);
                             setCV({ ...cv, skills: newSkills });
                           }}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600 hover:text-red-700 ml-2 text-sm"
                         >
                           Remove
                         </button>
                       </div>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Skill Name</label>
-                          <input
-                            type="text"
-                            value={skill.name}
-                            onChange={(e) => {
-                              const newSkills = [...cv.skills];
-                              newSkills[index].name = e.target.value;
-                              setCV({ ...cv, skills: newSkills });
-                            }}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Category</label>
-                          <input
-                            type="text"
-                            value={skill.category}
-                            onChange={(e) => {
-                              const newSkills = [...cv.skills];
-                              newSkills[index].category = e.target.value;
-                              setCV({ ...cv, skills: newSkills });
-                            }}
-                            placeholder="e.g., Programming, Design, Management"
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Proficiency Level</label>
-                          <select
-                            value={skill.level}
-                            onChange={(e) => {
-                              const newSkills = [...cv.skills];
-                              newSkills[index].level = parseInt(e.target.value);
-                              setCV({ ...cv, skills: newSkills });
-                            }}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                          >
-                            <option value={1}>Beginner</option>
-                            <option value={2}>Intermediate</option>
-                            <option value={3}>Advanced</option>
-                            <option value={4}>Expert</option>
-                            <option value={5}>Master</option>
-                          </select>
-                        </div>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {group.items.map((item, iIndex) => (
+                          <span key={iIndex} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            {item}
+                            <button
+                              onClick={() => {
+                                const newSkills = [...cv.skills];
+                                const newItems = [...newSkills[gIndex].items];
+                                newItems.splice(iIndex, 1);
+                                newSkills[gIndex] = { ...newSkills[gIndex], items: newItems };
+                                setCV({ ...cv, skills: newSkills });
+                              }}
+                              className="ml-1 text-indigo-600 hover:text-indigo-900"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
                       </div>
+                      <input
+                        type="text"
+                        placeholder="Add skill... (press Enter or comma)"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ',') {
+                            e.preventDefault();
+                            const val = (e.target as HTMLInputElement).value.trim().replace(/,$/, '');
+                            if (val) {
+                              const newSkills = [...cv.skills];
+                              newSkills[gIndex] = { ...newSkills[gIndex], items: [...newSkills[gIndex].items, val] };
+                              setCV({ ...cv, skills: newSkills });
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }
+                        }}
+                        className="mt-1 block w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      />
                     </div>
                   ))}
                 </div>

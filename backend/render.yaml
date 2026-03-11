@@ -3,7 +3,7 @@ services:
   - type: web
     name: neurovia-career-api
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: apt-get update && apt-get install -y texlive-latex-base texlive-latex-extra texlive-fonts-recommended && pip install -r requirements.txt
     startCommand: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION

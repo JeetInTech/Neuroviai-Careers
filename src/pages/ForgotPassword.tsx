@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { resetPassword } = useAuth();
@@ -14,17 +14,57 @@ export default function ForgotPassword() {
     e.preventDefault();
 
     try {
-      setMessage('');
       setError('');
       setLoading(true);
       await resetPassword(email);
-      setMessage('Check your email for password reset instructions');
+      setEmailSent(true);
     } catch (err) {
-      setError('Failed to reset password');
+      setError('Failed to send reset email. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-6 shadow sm:rounded-lg">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+              <CheckCircle className="h-10 w-10 text-green-600" />
+            </div>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
+              <p className="text-gray-600 mb-2">
+                We've sent a password reset link to:
+              </p>
+              <div className="bg-indigo-50 rounded-lg p-3 mb-4">
+                <span className="text-indigo-700 font-semibold">{email}</span>
+              </div>
+              <p className="text-gray-500 text-sm mb-6">
+                Click the link in the email to set a new password. Check your spam folder if you don't see it.
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => { setEmailSent(false); setEmail(''); }}
+                  className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Try a different email
+                </button>
+                <Link
+                  to="/login"
+                  className="w-full flex justify-center items-center py-2 px-4 text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to sign in
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -46,12 +86,6 @@ export default function ForgotPassword() {
             {error && (
               <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
                 {error}
-              </div>
-            )}
-            
-            {message && (
-              <div className="bg-green-50 border border-green-400 text-green-700 px-4 py-3 rounded">
-                {message}
               </div>
             )}
 
