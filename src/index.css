@@ -114,6 +114,172 @@
 }
 
 /* ============================================
+   PREMIUM HOMEPAGE - ANIMATIONS & EFFECTS
+   ============================================ */
+
+/* Gradient mesh - moving background orbs for hero */
+@keyframes gradient-mesh-1 {
+  0%, 100% { transform: translate(0%, 0%) scale(1); }
+  25% { transform: translate(30%, -20%) scale(1.1); }
+  50% { transform: translate(-10%, 30%) scale(0.9); }
+  75% { transform: translate(20%, 10%) scale(1.05); }
+}
+
+@keyframes gradient-mesh-2 {
+  0%, 100% { transform: translate(0%, 0%) scale(1); }
+  25% { transform: translate(-25%, 15%) scale(1.15); }
+  50% { transform: translate(20%, -25%) scale(0.95); }
+  75% { transform: translate(-15%, -10%) scale(1.08); }
+}
+
+@keyframes gradient-mesh-3 {
+  0%, 100% { transform: translate(0%, 0%) scale(1.05); }
+  33% { transform: translate(15%, 20%) scale(0.9); }
+  66% { transform: translate(-20%, -15%) scale(1.1); }
+}
+
+/* Infinite marquee scroll */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Gentle floating for 3D elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotateX(2deg) rotateY(-3deg); }
+  50% { transform: translateY(-12px) rotateX(-2deg) rotateY(3deg); }
+}
+
+@keyframes float-subtle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Pulsing glow for CTA buttons */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3), 0 0 60px rgba(99, 102, 241, 0.1); }
+  50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.5), 0 0 80px rgba(99, 102, 241, 0.2); }
+}
+
+/* ATS gauge fill animation */
+@keyframes gauge-fill {
+  from { stroke-dashoffset: 283; }
+}
+
+/* Gradient border animation */
+@keyframes gradient-rotate {
+  0% { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+
+/* Spotlight sweep */
+@keyframes spotlight-sweep {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Animation utility classes */
+.animate-gradient-mesh-1 {
+  animation: gradient-mesh-1 20s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-gradient-mesh-2 {
+  animation: gradient-mesh-2 25s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-gradient-mesh-3 {
+  animation: gradient-mesh-3 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-float-subtle {
+  animation: float-subtle 4s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* 3D perspective container */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Mouse spotlight on cards */
+.bento-spotlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.bento-spotlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(99, 102, 241, 0.06), transparent 40%);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.bento-spotlight:hover::before {
+  opacity: 1;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-gradient-mesh-1,
+  .animate-gradient-mesh-2,
+  .animate-gradient-mesh-3,
+  .animate-marquee,
+  .animate-float,
+  .animate-float-subtle,
+  .animate-glow-pulse,
+  .animate-fade-in-down,
+  .animate-fade-in-up,
+  .animate-fade-in,
+  .animate-slide-in {
+    animation: none !important;
+  }
+  
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
    CUSTOM COMPONENTS
    ============================================ */
 

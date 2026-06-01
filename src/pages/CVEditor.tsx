@@ -201,38 +201,70 @@ export default function CVEditor() {
 
     try {
       setError('');
+      
+      // Determine if template is a "visual" template or a standard text one
+      const visualTemplates = [
+        'mobile-developer', 'systems-engineer', 'creative-bold', 
+        'executive', 'freelancer', 'ai-ml', 'ai-ml-engineer', 
+        'data-science', 'data-scientist', 'designer', 'video-editor'
+      ];
+      
+      const isVisualTemplate = visualTemplates.includes(cv.template || '');
 
-      // Generate LaTeX with template-specific section ordering
-      let latexTemplate: LaTeXExportOptions['template'] = 'professional';
-      const templateMap: Record<string, LaTeXExportOptions['template']> = {
-        'modern-minimal': 'minimal', 'minimal': 'minimal',
-        'tech-focused': 'software-engineer', 'software-engineer': 'software-engineer',
-        'classic-professional': 'professional', 'professional': 'professional',
-        'fresher': 'fresher', 'entry-level': 'fresher',
-        'data-scientist': 'data-scientist', 'data-science': 'data-scientist',
-        'ai-ml-engineer': 'ai-ml', 'ai-ml': 'ai-ml',
-      };
-      if (cv.template && templateMap[cv.template]) {
-        latexTemplate = templateMap[cv.template];
-      } else if (cv.target_role) {
-        latexTemplate = getRecommendedTemplate(cv.target_role);
+      if (isVisualTemplate && cvRef.current) {
+        // Use html2pdf for visual templates
+        setSaving(true); // Reuse saving state for loading indicator
+        
+        // Dynamic import to avoid SSR issues if any, and keep main bundle smaller
+        const html2pdf = (await import('html2pdf.js')).default;
+        
+        const element = cvRef.current;
+        const opt = {
+          margin:       0,
+          filename:     `${cv.personal_info.full_name?.replace(/\s+/g, '_') || 'cv'}_resume.pdf`,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2, useCORS: true },
+          jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        await html2pdf().set(opt).from(element).save();
+        setSaving(false);
+        setShowDownloadMenu(false);
+      } else {
+        // Use LaTeX export for standard templates
+        let latexTemplate: LaTeXExportOptions['template'] = 'professional';
+        const templateMap: Record<string, LaTeXExportOptions['template']> = {
+          'modern-minimal': 'minimal', 'minimal': 'minimal',
+          'tech-focused': 'software-engineer', 'software-engineer': 'software-engineer',
+          'classic-professional': 'professional', 'professional': 'professional',
+          'fresher': 'fresher', 'entry-level': 'fresher',
+          // Keep these mappings just in case they enter this branch
+          'data-scientist': 'data-scientist', 'data-science': 'data-scientist',
+          'ai-ml-engineer': 'ai-ml', 'ai-ml': 'ai-ml',
+        };
+        if (cv.template && templateMap[cv.template]) {
+          latexTemplate = templateMap[cv.template];
+        } else if (cv.target_role) {
+          latexTemplate = getRecommendedTemplate(cv.target_role);
+        }
+
+        const latexSource = generateLaTeX(cv, { template: latexTemplate });
+
+        const pdfBlob = await api.compileLaTeX(latexSource, cv.personal_info.full_name?.replace(/\s+/g, '_') || 'resume');
+        const url = window.URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${cv.personal_info.full_name || 'cv'}_resume.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        setShowDownloadMenu(false);
       }
-
-      const latexSource = generateLaTeX(cv, { template: latexTemplate });
-
-      const pdfBlob = await api.compileLaTeX(latexSource, cv.personal_info.full_name?.replace(/\s+/g, '_') || 'resume');
-      const url = window.URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${cv.personal_info.full_name || 'cv'}_resume.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      setShowDownloadMenu(false);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      setError('Failed to download PDF. LaTeX compilation may be unavailable.');
+      setError('Failed to download PDF. Please try again.');
+      setSaving(false);
     }
   };
 
@@ -436,7 +468,7 @@ export default function CVEditor() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
       </div>
     );
@@ -444,15 +476,15 @@ export default function CVEditor() {
 
   if (!cv) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900">CV not found</h2>
+          <h2 className="text-xl font-semibold text-white">CV not found</h2>
           <button
-            onClick={() => navigate('/portfolio')}
-            className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => navigate('/profile')}
+            className="mt-4 inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-semibold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-500/10"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Portfolio
+            Back to Profile
           </button>
         </div>
       </div>
@@ -460,18 +492,18 @@ export default function CVEditor() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-transparent py-12 text-gray-900 dark:text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+          <div className="mb-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg relative">
             {error}
           </div>
         )}
 
         <div className="flex justify-between items-center mb-8">
           <button
-            onClick={() => navigate('/portfolio')}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            onClick={() => navigate('/profile')}
+            className="inline-flex items-center px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium text-gray-700 dark:text-white bg-white dark:bg-white/5 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
@@ -482,7 +514,7 @@ export default function CVEditor() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-custom-darkest hover:bg-custom-dark disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-md shadow-indigo-500/10"
               >
                 <Save className="h-4 w-4 mr-2" />
                 {saving ? 'Saving...' : 'Save Changes'}
@@ -491,7 +523,7 @@ export default function CVEditor() {
 
             <button
               onClick={() => setShowShareDialog(true)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="inline-flex items-center px-4 py-2 border border-white/10 rounded-xl text-sm font-medium text-white bg-white/5 hover:bg-white/10 transition-colors"
             >
               <Share2 className="h-4 w-4 mr-2" />
               Share
@@ -499,7 +531,7 @@ export default function CVEditor() {
 
             <button
               onClick={() => setIsViewMode(!isViewMode)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="inline-flex items-center px-4 py-2 border border-white/10 rounded-xl text-sm font-medium text-white bg-white/5 hover:bg-white/10 transition-colors"
             >
               <Eye className="h-4 w-4 mr-2" />
               {isViewMode ? 'Edit Mode' : 'View Mode'}
@@ -508,7 +540,7 @@ export default function CVEditor() {
             <div className="relative">
               <button
                 onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-md shadow-emerald-500/10"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Download

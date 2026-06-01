@@ -28,7 +28,10 @@ import {
   ChevronUp,
   FileUp,
   Edit3,
-  FileDown
+  FileDown,
+  Terminal,
+  BarChart3,
+  Palette
 } from 'lucide-react';
 
 // ============================================
@@ -36,11 +39,11 @@ import {
 // ============================================
 
 const TEMPLATE_CATEGORIES = [
-  { id: 'Engineering & Tech', icon: '⚡', color: 'from-blue-500 to-indigo-600' },
-  { id: 'Data & AI', icon: '📊', color: 'from-emerald-500 to-teal-600' },
-  { id: 'Creative', icon: '🎨', color: 'from-fuchsia-500 to-pink-600' },
-  { id: 'Business & Management', icon: '📋', color: 'from-amber-500 to-orange-600' },
-  { id: 'General', icon: '📄', color: 'from-gray-500 to-slate-600' },
+  { id: 'Engineering & Tech', icon: Terminal, color: 'from-blue-500 to-indigo-600' },
+  { id: 'Data & AI', icon: BarChart3, color: 'from-emerald-500 to-teal-600' },
+  { id: 'Creative', icon: Palette, color: 'from-fuchsia-500 to-pink-600' },
+  { id: 'Business & Management', icon: Briefcase, color: 'from-amber-500 to-orange-600' },
+  { id: 'General', icon: FileText, color: 'from-gray-500 to-slate-600' },
 ];
 
 // ============================================
@@ -142,15 +145,7 @@ const CV_TEMPLATES = [
     category: 'Creative',
     premium: false,
   },
-  {
-    id: 'creative-bold',
-    name: 'Creative Bold',
-    color: 'from-orange-500 to-red-600',
-    description: 'Bold, striking design for standing out',
-    targetRole: 'creative-bold' as const,
-    category: 'Creative',
-    premium: false,
-  },
+
   {
     id: 'graphic-designer',
     name: 'Graphic Designer',
@@ -671,183 +666,62 @@ export default function CVMaker() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
-          <p className="text-gray-500">Loading your resumes...</p>
+          <p className="text-gray-500 dark:text-white/50">Loading your resumes...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-transparent py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Document Upload Modal */}
-        {showUpload && (
-          <DocumentUpload 
-            onDataExtracted={handleDocumentData}
-            onClose={() => setShowUpload(false)}
-          />
-        )}
-
         {/* Header */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center space-x-3 mb-2">
-                <Sparkles className="h-8 w-8 text-indigo-600" />
-                <h1 className="text-3xl font-bold text-gray-900">ATS Resumes</h1>
-              </div>
-              <p className="text-gray-600">Create ATS-optimized resumes that get you interviews</p>
+        <div className="mb-10">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+              <Sparkles className="h-7 w-7 text-white" />
             </div>
-            
-            {/* Upload Button */}
-            <button
-              onClick={() => setShowUpload(true)}
-              disabled={creating}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50"
-            >
-              <Upload className="h-5 w-5" />
-              Upload Existing CV
-            </button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Resume Tailoring</h1>
+              <p className="text-gray-500 dark:text-white/50 mt-0.5">Optimize your resume for any job description with AI</p>
+            </div>
           </div>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
+          <div className="mb-6 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg flex items-center">
             <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
             <span>{error}</span>
             <button 
               onClick={() => setError('')}
-              className="ml-auto text-red-500 hover:text-red-700"
+              className="ml-auto text-red-700 dark:text-red-400 hover:opacity-85"
             >
               ×
             </button>
           </div>
         )}
 
-        {/* Existing CVs */}
-        {cvs.length > 0 && (
-          <div className="mb-16">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-              <FileText className="h-5 w-5 mr-2 text-indigo-600" />
-              Your Resumes ({cvs.length})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cvs.map((cv) => {
-                const template = CV_TEMPLATES.find(t => t.id === cv.template);
-                return (
-                  <div 
-                    key={cv.id} 
-                    className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
-                  >
-                    {/* Template Header */}
-                    <div className={`h-2 bg-gradient-to-r ${template?.color || 'from-gray-400 to-gray-500'}`} />
-                    
-                    <div className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {cv.personal_info.full_name || 'Untitled Resume'}
-                          </h3>
-                          <p className="text-sm text-gray-500 flex items-center mt-1">
-                            <Briefcase className="h-3 w-3 mr-1" />
-                            {template?.name || cv.template}
-                          </p>
-                        </div>
-                        <span className="text-2xl">{TEMPLATE_CATEGORIES.find(c => c.id === template?.category)?.icon || '📄'}</span>
-                      </div>
-
-                      {/* Stats */}
-                      <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          <p className="text-lg font-semibold text-gray-900">{cv.experience?.length || 0}</p>
-                          <p className="text-xs text-gray-500">Experience</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          <p className="text-lg font-semibold text-gray-900">{cv.skills?.length || 0}</p>
-                          <p className="text-xs text-gray-500">Skills</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          <p className="text-lg font-semibold text-gray-900">{cv.projects?.length || 0}</p>
-                          <p className="text-xs text-gray-500">Projects</p>
-                        </div>
-                      </div>
-
-                      {/* Last Updated */}
-                      <p className="text-xs text-gray-400 flex items-center mb-4">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Updated {formatDate(cv.updated_at)}
-                      </p>
-
-                      {/* Actions */}
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => navigate(`/cv/edit/${cv.id}`)}
-                          className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDownloadPDF(cv)}
-                          disabled={downloadingCvId === cv.id}
-                          className="px-3 py-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="Download PDF"
-                        >
-                          {downloadingCvId === cv.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Download className="h-4 w-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm(cv.id)}
-                          className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* AI Resume Tailoring Section */}
-        <div className="mb-16 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl border border-indigo-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-indigo-100">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                  <Sparkles className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">AI Resume Tailoring</h2>
-                  <p className="text-sm text-gray-600">Optimize your resume for a specific job description with AI</p>
-                </div>
-              </div>
-            </div>
-
+        <div className="mb-16 bg-gradient-to-br from-indigo-50/50 via-purple-50/50 to-pink-50/50 dark:from-white/[0.02] dark:via-white/[0.01] dark:to-transparent rounded-2xl border border-indigo-200/60 dark:border-white/10 shadow-sm overflow-hidden">
             <div className="p-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Column - Inputs */}
                 <div className="space-y-4">
                   {/* Upload or Select Resume */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Resume to Tailor</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-white/80 mb-2">Resume to Tailor</label>
                     
                     {/* Upload Option */}
                     <label className={`block mb-3 border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all ${
                       uploadingForTailoring 
-                        ? 'border-indigo-300 bg-indigo-50' 
+                        ? 'border-indigo-300 bg-indigo-50 dark:border-indigo-500/50 dark:bg-indigo-500/5' 
                         : uploadedParsedData 
-                          ? 'border-green-300 bg-green-50' 
-                          : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'
+                          ? 'border-green-300 bg-green-50 dark:border-green-500/50 dark:bg-green-500/5' 
+                          : 'border-gray-300 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-400 hover:bg-gray-50 dark:hover:bg-white/5'
                     }`}>
                       <input
                         type="file"
@@ -857,17 +731,17 @@ export default function CVMaker() {
                         disabled={uploadingForTailoring}
                       />
                       {uploadingForTailoring ? (
-                        <div className="flex items-center justify-center gap-2 text-indigo-600">
+                        <div className="flex items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400">
                           <Loader2 className="h-5 w-5 animate-spin" />
                           <span className="text-sm font-medium">Parsing resume...</span>
                         </div>
                       ) : uploadedParsedData ? (
-                        <div className="flex items-center justify-center gap-2 text-green-700">
+                        <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
                           <CheckCircle className="h-5 w-5" />
                           <span className="text-sm font-medium">Resume uploaded and ready!</span>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-center gap-2 text-gray-600">
+                        <div className="flex items-center justify-center gap-2 text-gray-600 dark:text-white/60">
                           <FileUp className="h-5 w-5" />
                           <span className="text-sm font-medium">Upload PDF or Word document</span>
                         </div>
@@ -878,10 +752,10 @@ export default function CVMaker() {
                     {cvs.length > 0 && (
                       <div className="relative my-3">
                         <div className="absolute inset-0 flex items-center">
-                          <div className="w-full border-t border-gray-300" />
+                          <div className="w-full border-t border-gray-300 dark:border-white/10" />
                         </div>
                         <div className="relative flex justify-center text-xs">
-                          <span className="px-2 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 text-gray-500">or select existing</span>
+                          <span className="px-2 bg-gradient-to-br from-indigo-50/50 via-purple-50/50 to-pink-50/50 dark:from-[#0f0f15] dark:to-[#0f0f15] text-gray-500 dark:text-white/40">or select existing</span>
                         </div>
                       </div>
                     )}
@@ -896,12 +770,12 @@ export default function CVMaker() {
                             setUploadedParsedData(null);
                           }
                         }}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                        className="w-full border border-gray-300 dark:border-white/10 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-[#12121a] text-gray-900 dark:text-white"
                       >
-                        <option value="">Choose from your resumes...</option>
-                        {uploadedParsedData && <option value="uploaded">📄 Uploaded Resume</option>}
+                        <option value="" className="text-gray-900 dark:text-white bg-white dark:bg-[#12121a]">Choose from your resumes...</option>
+                        {uploadedParsedData && <option value="uploaded" className="text-gray-900 dark:text-white bg-white dark:bg-[#12121a]">📄 Uploaded Resume</option>}
                         {cvs.map((cv) => (
-                          <option key={cv.id} value={cv.id}>
+                          <option key={cv.id} value={cv.id} className="text-gray-900 dark:text-white bg-white dark:bg-[#12121a]">
                             {cv.personal_info?.full_name || 'Untitled'} - {CV_TEMPLATES.find(t => t.id === cv.template)?.name || cv.template}
                           </option>
                         ))}
@@ -911,25 +785,25 @@ export default function CVMaker() {
 
                   {/* Job Title */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Target Job Title (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-white/80 mb-2">Target Job Title (Optional)</label>
                     <input
                       type="text"
                       value={jobTitle}
                       onChange={(e) => setJobTitle(e.target.value)}
                       placeholder="e.g., Senior Software Engineer"
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full border border-gray-300 dark:border-white/10 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-[#12121a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/20"
                     />
                   </div>
 
                   {/* Job Description */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Job Description *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-white/80 mb-2">Job Description *</label>
                     <textarea
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
                       placeholder="Paste the full job description here..."
                       rows={8}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y"
+                      className="w-full border border-gray-300 dark:border-white/10 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y bg-white dark:bg-[#12121a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/20"
                     />
                   </div>
 
@@ -958,7 +832,7 @@ export default function CVMaker() {
 
                   {/* Error */}
                   {tailoringError && (
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-sm text-red-700">
+                    <div className="p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-500/20 rounded-lg flex items-center gap-2 text-sm text-red-700 dark:text-red-400">
                       <AlertCircle className="h-5 w-5 flex-shrink-0" />
                       {tailoringError}
                     </div>
@@ -968,19 +842,19 @@ export default function CVMaker() {
                 {/* Right Column - Results */}
                 <div className="space-y-4">
                   {!tailoringResult ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-white/50 rounded-xl border-2 border-dashed border-gray-200">
-                      <Target className="h-12 w-12 text-gray-300 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-500 mb-2">Results will appear here</h3>
-                      <p className="text-sm text-gray-400">Upload or select a resume, paste a job description, and click "Tailor My Resume"</p>
+                    <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-white/50 dark:bg-white/[0.01] rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10">
+                      <Target className="h-12 w-12 text-gray-300 dark:text-white/20 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-500 dark:text-white/60 mb-2">Results will appear here</h3>
+                      <p className="text-sm text-gray-400 dark:text-white/40">Upload or select a resume, paste a job description, and click "Tailor My Resume"</p>
                     </div>
                   ) : (
                     <>
                       {/* Match Score */}
-                      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                      <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/10 p-5 shadow-sm">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-2">
-                            <Target className="h-6 w-6 text-indigo-600" />
-                            <span className="font-semibold text-gray-900 text-lg">Match Score</span>
+                            <Target className="h-6 w-6 text-indigo-600 dark:text-indigo-450" />
+                            <span className="font-semibold text-gray-900 dark:text-white text-lg">Match Score</span>
                           </div>
                           <span className={`text-3xl font-bold ${
                             tailoringResult.match_score >= 80 ? 'text-green-600' :
@@ -990,7 +864,7 @@ export default function CVMaker() {
                             {tailoringResult.match_score}%
                           </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-3">
                           <div
                             className={`h-3 rounded-full transition-all duration-700 ${
                               tailoringResult.match_score >= 80 ? 'bg-green-500' :
@@ -1003,14 +877,14 @@ export default function CVMaker() {
                       </div>
 
                       {/* Optimizations */}
-                      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/10 p-5 shadow-sm">
+                        <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                           <CheckCircle className="h-5 w-5 text-green-600" />
                           Optimizations Made
                         </h4>
                         <ul className="space-y-2">
                           {tailoringResult.optimizations_made.map((opt, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                            <li key={idx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-white/80">
                               <span className="text-green-500 mt-0.5">✓</span>
                               {opt}
                             </li>
@@ -1019,45 +893,45 @@ export default function CVMaker() {
                       </div>
 
                       {/* Job Analysis Accordion */}
-                      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                      <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden shadow-sm">
                         <button
                           onClick={() => setShowJobAnalysis(!showJobAnalysis)}
-                          className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+                          className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                         >
-                          <span className="font-semibold text-gray-900">Job Analysis Details</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">Job Analysis Details</span>
                           {showJobAnalysis ? (
-                            <ChevronUp className="h-5 w-5 text-gray-500" />
+                            <ChevronUp className="h-5 w-5 text-gray-500 dark:text-white/60" />
                           ) : (
-                            <ChevronDown className="h-5 w-5 text-gray-500" />
+                            <ChevronDown className="h-5 w-5 text-gray-500 dark:text-white/60" />
                           )}
                         </button>
                         {showJobAnalysis && (
-                          <div className="p-4 pt-0 space-y-4 border-t border-gray-100">
+                          <div className="p-4 pt-0 space-y-4 border-t border-gray-100 dark:border-white/5">
                             <div>
-                              <p className="text-sm font-medium text-gray-700 mb-2">Required Skills</p>
+                              <p className="text-sm font-medium text-gray-700 dark:text-white/80 mb-2">Required Skills</p>
                               <div className="flex flex-wrap gap-1.5">
                                 {tailoringResult.job_analysis.required_skills.map((skill, idx) => (
-                                  <span key={idx} className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">
+                                  <span key={idx} className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full font-medium">
                                     {skill}
                                   </span>
                                 ))}
                               </div>
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-gray-700 mb-2">ATS Keywords</p>
+                              <p className="text-sm font-medium text-gray-700 dark:text-white/80 mb-2">ATS Keywords</p>
                               <div className="flex flex-wrap gap-1.5">
                                 {tailoringResult.job_analysis.ats_keywords.map((kw, idx) => (
-                                  <span key={idx} className="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs rounded-full font-medium">
+                                  <span key={idx} className="px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full font-medium">
                                     {kw}
                                   </span>
                                 ))}
                               </div>
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-gray-700 mb-2">Key Responsibilities</p>
+                              <p className="text-sm font-medium text-gray-700 dark:text-white/80 mb-2">Key Responsibilities</p>
                               <ul className="space-y-1">
                                 {tailoringResult.job_analysis.key_responsibilities.map((resp, idx) => (
-                                  <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
+                                  <li key={idx} className="text-sm text-gray-600 dark:text-white/70 flex items-start gap-2">
                                     <span className="text-gray-400">•</span>
                                     {resp}
                                   </li>
@@ -1101,11 +975,11 @@ export default function CVMaker() {
                           </button>
                           
                           {showExportOptions && (
-                            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-gray-200 shadow-xl z-10 overflow-hidden">
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#12121a] rounded-xl border border-gray-200 dark:border-white/10 shadow-xl z-10 overflow-hidden">
                               <button
                                 onClick={() => handleExportTailored('pdf')}
                                 disabled={exportingTailored}
-                                className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-3 disabled:opacity-50"
+                                className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-white/80 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-3 disabled:opacity-50"
                               >
                                 {exportingTailored ? (
                                   <Loader2 className="h-5 w-5 animate-spin text-red-500" />
@@ -1114,18 +988,18 @@ export default function CVMaker() {
                                 )}
                                 <div>
                                   <p>Export as PDF</p>
-                                  <p className="text-xs text-gray-400">Best for applications</p>
+                                  <p className="text-xs text-gray-400 dark:text-white/40">Best for applications</p>
                                 </div>
                               </button>
                               <button
                                 onClick={() => handleExportTailored('latex')}
                                 disabled={exportingTailored}
-                                className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-3 border-t border-gray-100 disabled:opacity-50"
+                                className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-white/80 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-3 border-t border-gray-100 dark:border-white/5 disabled:opacity-50"
                               >
                                 <Code className="h-5 w-5 text-blue-500" />
                                 <div>
                                   <p>Export as LaTeX</p>
-                                  <p className="text-xs text-gray-400">For developers & academics</p>
+                                  <p className="text-xs text-gray-400 dark:text-white/40">For developers & academics</p>
                                 </div>
                               </button>
                             </div>
@@ -1139,241 +1013,8 @@ export default function CVMaker() {
             </div>
           </div>
 
-        {/* Create New CV - Templates by Category */}
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2 flex items-center">
-            <Target className="h-5 w-5 mr-2 text-indigo-600" />
-            Create New Resume
-          </h2>
-          <p className="text-gray-600 mb-6">Choose a template optimized for your target role</p>
-          
-          {/* Search Bar */}
-          <div className="relative mb-6">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search templates by name or role..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                if (e.target.value) setSelectedCategory(null);
-              }}
-              className="w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            )}
-          </div>
-
-          {/* Category Buttons */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-8">
-            {TEMPLATE_CATEGORIES.map((category) => {
-              const count = CV_TEMPLATES.filter(t => t.category === category.id).length;
-              if (count === 0) return null;
-              const isSelected = selectedCategory === category.id;
-              
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => {
-                    setSelectedCategory(isSelected ? null : category.id);
-                    setSearchQuery('');
-                  }}
-                  className={`relative p-4 rounded-xl text-left transition-all overflow-hidden group ${
-                    isSelected
-                      ? 'ring-2 ring-offset-2 ring-indigo-500'
-                      : 'hover:shadow-lg hover:-translate-y-0.5'
-                  }`}
-                >
-                  {/* Gradient Background */}
-                  <div className={`absolute inset-0 bg-gradient-to-r ${category.color} ${isSelected ? 'opacity-100' : 'opacity-90 group-hover:opacity-100'}`} />
-                  
-                  {/* Content */}
-                  <div className="relative z-10">
-                    <span className="text-2xl mb-2 block">{category.icon}</span>
-                    <h3 className="font-semibold text-white text-sm">{category.id}</h3>
-                    <p className="text-white/70 text-xs mt-1">{count} templates</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Templates Display */}
-          {(selectedCategory || searchQuery) && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  {selectedCategory && (
-                    <>
-                      <span className="text-2xl">
-                        {TEMPLATE_CATEGORIES.find(c => c.id === selectedCategory)?.icon}
-                      </span>
-                      <h3 className="text-xl font-bold text-gray-900">{selectedCategory}</h3>
-                    </>
-                  )}
-                  {searchQuery && (
-                    <h3 className="text-xl font-bold text-gray-900">
-                      Search results for "{searchQuery}"
-                    </h3>
-                  )}
-                </div>
-                <button
-                  onClick={() => {
-                    setSelectedCategory(null);
-                    setSearchQuery('');
-                  }}
-                  className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Templates Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {CV_TEMPLATES
-                  .filter(t => {
-                    if (searchQuery) {
-                      const query = searchQuery.toLowerCase();
-                      return t.name.toLowerCase().includes(query) ||
-                        t.description.toLowerCase().includes(query) ||
-                        t.targetRole.toLowerCase().includes(query);
-                    }
-                    return t.category === selectedCategory;
-                  })
-                  .map((template) => {
-                    const FullPreviewComponent = getFullTemplatePreview(template.id);
-                    return (
-                      <div 
-                        key={template.id} 
-                        className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all group hover:border-indigo-300"
-                      >
-                        {/* Full CV Preview */}
-                        <div className={`bg-gradient-to-r ${template.color} p-4`}>
-                          <div className="bg-white rounded-lg shadow-xl overflow-hidden transform group-hover:scale-[1.01] transition-transform duration-300">
-                            <div className="max-h-[400px] overflow-hidden">
-                              <FullPreviewComponent className="scale-[0.85] origin-top" />
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="p-5 bg-white">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
-                            {template.premium && (
-                              <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
-                                Pro
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-500 mb-4">{template.description}</p>
-                          
-                          <button
-                            onClick={() => handleCreateCV(template.id, template.targetRole)}
-                            disabled={creating}
-                            className="w-full inline-flex items-center justify-center px-4 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50"
-                          >
-                            {creatingTemplateId === template.id ? (
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                            ) : (
-                              <>
-                                <Plus className="h-5 w-5 mr-2" />
-                                Use This Template
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-
-              {/* No Results */}
-              {searchQuery && CV_TEMPLATES.filter(t => {
-                const query = searchQuery.toLowerCase();
-                return t.name.toLowerCase().includes(query) ||
-                  t.description.toLowerCase().includes(query) ||
-                  t.targetRole.toLowerCase().includes(query);
-              }).length === 0 && (
-                <div className="text-center py-12">
-                  <Search className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No templates found</h3>
-                  <p className="text-gray-500">Try a different search term</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Prompt to select category when nothing selected */}
-          {!selectedCategory && !searchQuery && (
-            <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-              <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a category above</h3>
-              <p className="text-gray-500">Choose a category to browse templates or search by name</p>
-            </div>
-          )}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mt-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-8 text-white">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="mb-6 md:mb-0">
-              <h3 className="text-2xl font-bold mb-2">Export to LaTeX</h3>
-              <p className="text-indigo-100">
-                Get clean, modular LaTeX code for your resume. Perfect for developers!
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 bg-white/20 rounded-lg px-4 py-2">
-                <Code className="h-5 w-5" />
-                <span className="font-medium">.tex</span>
-              </div>
-              <div className="flex items-center space-x-2 bg-white/20 rounded-lg px-4 py-2">
-                <FileText className="h-5 w-5" />
-                <span className="font-medium">.pdf</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <Trash2 className="h-6 w-6 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Delete Resume?</h3>
-                <p className="text-sm text-gray-500">This action cannot be undone.</p>
-              </div>
-            </div>
-            
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDeleteCV(deleteConfirm)}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+

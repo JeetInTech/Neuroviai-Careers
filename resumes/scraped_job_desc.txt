@@ -1,0 +1,69 @@
+Avatar for Autodraft
+Autodraft
+Actively Hiring
+Best AI platform for cartoon animators
+Share
+Save
+Full-Stack Engineer
+₹10L – ₹14L • No equity
+|
+Bengaluru
+|1 year of exp
+|Full Time
+Reposted: 2 days ago• Recruiter recently active
+Job Location
+Bengaluru
+Remote Work Policy
+In office
+
+Visa Sponsorship
+Not Available
+
+Relocation
+Allowed
+Skills
+Python
+MySQL
+Redis
+Frontend Development
+HTML5 Canvas
+Microsoft Azure
+Pixi.Js
+Redux
+ReactJS
+About the job
+We are seeking a dynamic and skilled engineer with a strong focus on frontend & backend technologies to join our team.
+
+This role is ideal for someone passionate about building seamless, high-quality user experiences and has a solid foundation in both frontend & backend development. If you are a problem-solver, eager to contribute to all phases of the development lifecycle, and thrive in a fast-paced environment we would like to meet you.
+
+Experience with HTML Canvas, Node JS, Python, MySQL or having created any image / video editing tool would be a plus.
+
+Key Responsibilities:
+
+Create solutions for animation requirements
+Optimize algorithms / libraries for maximum speed and scalability
+Design, develop, and maintain scalable, responsive web applications
+Design and implement scalable backend services
+Work with databases to create efficient data models and optimize query performance
+Collaborate with cross-functional teams to deliver high-quality solutions
+Mentor junior developers and provide technical guidance
+Lead technical discussions and architectural planning
+Own critical parts of our backend infrastructure
+Help establish best practices and coding standards
+Contribute to all phases of the development lifecycle, from concept to deployment and maintenance.
+Stay up-to-date with emerging trends and technologies in AI content creation
+Requirements:
+
+Excellent problem-solving and analytical skills
+1-3 years of experience in full stack development with a strong focus on frontend technologies.
+Strong experience with TypeScript and Nextjs/React is a must.
+Familiarity with RESTful APIs to connect front-end applications with back-end service.
+Strong relational database expertise - you should ideally know how to optimise queries
+Understanding of distributed systems and asynchronous programming
+Ability to identify and troubleshoot website issues.
+What We Offer:
+
+Opportunity to work on the cutting edge tech for Animation
+A competitive salary and comprehensive benefits package
+Flexible working hours and remote work options
+Health Insurance for you and your loved ones

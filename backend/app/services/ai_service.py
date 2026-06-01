@@ -2,11 +2,44 @@
 AI Service using Groq API for CV content generation
 """
 from groq import Groq
+import re
+import json
+from html.parser import HTMLParser
 from typing import Optional, List, Dict, Any
 from ..config import settings
 import logging
 
 logger = logging.getLogger(__name__)
+
+class JobDescriptionHTMLParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.text_parts = []
+        self.in_ignored_tag = False
+        self.ignored_tags = {'script', 'style', 'nav', 'footer', 'header', 'noscript', 'iframe', 'head'}
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.ignored_tags:
+            self.in_ignored_tag = True
+
+    def handle_endtag(self, tag):
+        if tag in self.ignored_tags:
+            self.in_ignored_tag = False
+
+    def handle_data(self, data):
+        if self.in_ignored_tag:
+            return
+        cleaned = data.strip()
+        if cleaned:
+            self.text_parts.append(cleaned)
+
+def extract_text_from_html(html_content: str) -> str:
+    parser = JobDescriptionHTMLParser()
+    parser.feed(html_content)
+    text = "\n".join(parser.text_parts)
+    text = re.sub(r'[ \t]+', ' ', text)
+    text = re.sub(r'\n+', '\n', text)
+    return text.strip()
 
 
 class AIService:
@@ -240,13 +273,28 @@ FIX: [recommendation]
         self,
         cv_data: Dict[str, Any],
         job_description: str,
-        job_title: Optional[str] = None
+        job_title: Optional[str] = None,
+        mode: Optional[str] = 'balanced'
     ) -> Dict[str, Any]:
         """
         AI-powered resume tailoring to match a specific job description.
         Analyzes the job description, extracts key requirements, and
         optimizes the resume content to highlight relevant experience.
         """
+        # Define mode-based instructions
+        mode_instructions = ""
+        if mode == 'conservative':
+            mode_instructions = "Perform minimal, conservative edits. Preserve original experiences, projects, and skills as much as possible, focusing only on high-confidence phrasing adjustments and essential missing keyword mappings."
+        elif mode == 'aggressive':
+            mode_instructions = "Perform aggressive ATS optimization. Heavily map high-priority keywords, systems nomenclature, and required competencies directly into bullet points and summaries, optimizing strictly for ATS score."
+        elif mode == 'recruiter':
+            mode_instructions = "Optimize strictly for recruiter appeal and human readability. Emphasize clear formatting, strong action verbs, quantifiable achievements, metric indicators (scale, performance), and distinct career story milestones."
+        elif mode == 'technical':
+            mode_instructions = "Perform a technical focused engineering optimization. Highlight software architecture constructs, database tuning, async programming pipelines, complex API details, microservice setups, and programming tools."
+        elif mode == 'leadership':
+            mode_instructions = "Perform a leadership and impact optimization. Emphasize project ownership, design scalability, strategic business outcomes, system scaling, architectural influence, and key delivery metrics."
+        else: # 'balanced' or fallback
+            mode_instructions = "Perform a balanced, recruiter-credible optimization. Enhance transferable skills, align metrics with responsibilities, inject keywords naturally, and preserve original achievements factually."
         
         # Step 1: Extract key requirements from job description
         extraction_prompt = f"""Analyze this job description and extract:
@@ -305,7 +353,8 @@ Target Job Requirements:
 Candidate's Current Skills: {', '.join(current_skills[:15])}
 Candidate's Experience: {len(current_experience)} positions
 
-Requirements:
+Requirements & Style Rules:
+- Style instructions: {mode_instructions}
 - 2-3 powerful sentences
 - Include relevant ATS keywords naturally
 - Highlight matching skills and experience
@@ -340,7 +389,8 @@ Target Job Requirements:
 - Key Responsibilities: {', '.join(key_responsibilities[:5])}
 - ATS Keywords: {', '.join(ats_keywords[:8])}
 
-Requirements:
+Requirements & Style Rules:
+- Style instructions: {mode_instructions}
 - Generate 3-4 bullet points
 - Start each with strong action verb
 - Include quantifiable achievements (use realistic numbers)
@@ -380,11 +430,12 @@ Target Job Requirements:
 - Required Skills: {', '.join(required_skills)}
 - ATS Keywords: {', '.join(ats_keywords)}
 
-Tasks:
-1. Reorder skills to put most relevant first
-2. Add any critical missing skills from requirements (only if candidate likely has them)
-3. Remove skills not relevant to target job
-4. Return 8-12 most impactful skills
+Tasks & Style Rules:
+- Style instructions: {mode_instructions}
+- Reorder skills to put most relevant first
+- Add any critical missing skills from requirements (only if candidate likely has them)
+- Remove skills not relevant to target job
+- Return 8-12 most impactful skills
 
 Return ONLY skill names, one per line, most important first."""
 
@@ -455,6 +506,100 @@ Return ONLY a number between 0-100."""
                 'ATS keywords incorporated throughout'
             ]
         }
+
+    async def scrape_job_description_url(self, url: str) -> str:
+        """Fetch and scrape job description from a URL"""
+        logger.info(f"Scraping job description from URL: {url}")
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        }
+        try:
+            import httpx
+            async with httpx.AsyncClient(follow_redirects=True, timeout=15) as client:
+                resp = await client.get(url, headers=headers)
+                resp.raise_for_status()
+                text = extract_text_from_html(resp.text)
+                if not text:
+                    raise ValueError("No text content could be extracted from HTML.")
+                return text
+        except Exception as e:
+            logger.error(f"Failed to scrape job URL: {e}")
+            raise ValueError(f"Failed to fetch or parse the job URL: {str(e)}")
+
+    async def pre_optimize_analysis(self, cv_data: Dict[str, Any], job_description: str) -> Dict[str, Any]:
+        """Generate a pre-optimization audit report for CV and Job Description"""
+        logger.info("Generating pre-optimization report...")
+        
+        # Build text description of CV for compact audit
+        cv_skills = ", ".join([s.get('name', '') for s in cv_data.get('skills', [])])
+        cv_summary = cv_data.get('personal_info', {}).get('summary', '')
+        cv_experience = "\n".join([
+            f"- {exp.get('title', '')} at {exp.get('company', '')}: {exp.get('description', '')}"
+            for exp in cv_data.get('experience', [])
+        ])
+        cv_projects = "\n".join([
+            f"- {p.get('name', '')}: {p.get('description', '')}"
+            for p in cv_data.get('projects', [])
+        ])
+        
+        prompt = f"""You are an elite ATS auditor and recruiter. Analyze this candidate's resume data and the target job description to generate a highly detailed pre-optimization report.
+
+Candidate Summary: {cv_summary}
+Candidate Skills: {cv_skills}
+Candidate Experience:
+{cv_experience}
+Candidate Projects:
+{cv_projects}
+
+Target Job Description:
+{job_description}
+
+Provide a complete analysis in this exact structured JSON format:
+{{
+  "ats_match_score": 85,
+  "missing_keywords": ["FastAPI", "Docker", "pgvector"],
+  "overlapping_skills": ["React", "TypeScript", "Python"],
+  "role_alignment": "Candidate has excellent full-stack developer experience, but lacks direct AI multi-agent orchestration references in their current resume.",
+  "experience_relevance": "Work experience at Inikola Technologies directly maps to backend development, but need to bring out measurable SaaS achievements.",
+  "recruiter_concerns": ["The candidate is currently a B.Tech expected graduate which might require proof of commercial delivery.", "No explicit mention of production cloud environments like AWS EC2/S3."],
+  "strengths": ["Strong foundational full-stack portfolio with live live SaaS Neuroviai.", "Hands-on experience with FastAPI and Postgres."],
+  "recommended_opportunities": ["Highlight the YouTube Automation Shorts pipeline as video tooling evidence.", "Structure the Postgres metrics to emphasize index scaling."]
+}}
+
+Return ONLY valid JSON. No comments, no explanations. Ensure it parses cleanly with json.loads."""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=800
+            )
+            
+            content = response.choices[0].message.content.strip()
+            # Clean up markdown JSON markers if any
+            if content.startswith("```json"):
+                content = content[7:].strip()
+            elif content.startswith("```"):
+                content = content[3:].strip()
+            if content.endswith("```"):
+                content = content[:-3].strip()
+                
+            return json.loads(content)
+        except Exception as e:
+            logger.error(f"Groq Pre-Audit analysis failed: {e}")
+            # Fallback mock/rule-based audit if LLM fails
+            return {
+                "ats_match_score": 60,
+                "missing_keywords": ["FastAPI", "PostgreSQL"],
+                "overlapping_skills": ["Python", "React"],
+                "role_alignment": "Candidate background fits full-stack profiles but needs detailed alignment.",
+                "experience_relevance": "Direct match for frontend/backend, but needs metrics-focused updates.",
+                "recruiter_concerns": ["Needs explicit demonstration of project metrics."],
+                "strengths": ["Demonstrated production experience in freelance web development."],
+                "recommended_opportunities": ["Perform balanced optimization to bring out hidden metrics."]
+            }
 
 
 # Singleton instance

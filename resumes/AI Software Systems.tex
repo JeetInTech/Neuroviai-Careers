@@ -1,0 +1,111 @@
+\documentclass[9.5pt]{article}
+\usepackage[margin=0.4in, top=0.35in, bottom=0.35in]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+\setlist[itemize]{leftmargin=1.2em, noitemsep, topsep=1pt, parsep=0pt}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\titlespacing{\section}{0pt}{4pt}{1.5pt}
+\titleformat{\section}{\bfseries\uppercase}{}{0pt}{}[\titlerule]
+\hypersetup{hidelinks}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+
+\begin{document}
+
+% ===== HEADER =====
+\begin{center}
+  {\large \textbf{SANGRAMJEET GHOSH}} \\[2pt]
+  {\small
+    +91~9059150937 \;|\;
+    \href{mailto:sangramjeet47@gmail.com}{sangramjeet47@gmail.com} \;|\;
+    \href{https://www.linkedin.com/in/sangramjeetghosh}{linkedin.com/in/sangramjeetghosh} \;|\;
+    \href{https://github.com/JeetInTech}{github.com/JeetInTech} \;|\;
+    \href{https://sangramjeet.me}{sangramjeet.me} \;|\;
+    \href{https://neuroviai.com}{neuroviai.com}
+  }
+\end{center}
+
+\vspace{-2pt}
+\noindent\rule{\textwidth}{0.4pt}
+\vspace{-4pt}
+
+% ===== SUMMARY =====
+\section*{Summary}
+AI \& Full-Stack Engineer with production experience shipping SaaS platforms, autonomous AI systems, and automation pipelines. Launched Neuroviai — a live multi-provider LLM SaaS — and built Sebastian, an autonomous assistant with 59+ tools, real-time voice, OS control, and 110+ API integrations. Strong in FastAPI, LangGraph, PostgreSQL, React, and Docker. Seeking roles to build impactful technology at scale.
+
+% ===== SKILLS =====
+\section*{Skills}
+\begin{tabularx}{\textwidth}{@{} p{1.9cm} X @{}}
+\textbf{Languages}  & Python, TypeScript, JavaScript, SQL, Bash \\[1pt]
+\textbf{AI / ML}    & LangGraph, LangChain, Gemini API, OpenAI, Groq, RAG Pipelines, pgvector, Prompt Engineering, Multi-Agent Systems \\[1pt]
+\textbf{Backend}    & FastAPI, REST APIs, WebSockets, JWT/OAuth 2.0, Webhooks, Microservices, Async Python \\[1pt]
+\textbf{Frontend}   & React 18, Next.js 14, Tailwind CSS, Zustand, ShadCN/UI, Vite \\[1pt]
+\textbf{Databases}  & PostgreSQL, Supabase, pgvector, Redis, SQLAlchemy \\[1pt]
+\textbf{DevOps}     & Docker, GitHub Actions CI/CD, AWS (EC2, S3, IAM), Render, Netlify, Nginx, FFmpeg \\
+\end{tabularx}
+
+% ===== EXPERIENCE =====
+\section*{Experience}
+
+\textbf{Freelance AI \& Full-Stack Developer} \hfill \textit{Aug 2025 -- Present} \quad \textit{Remote}
+\begin{itemize}
+  \item Delivered end-to-end SaaS MVPs for 3+ startup founders: architecture, development, deployment, and handoff docs.
+  \item Built subscription billing (Razorpay), JWT/OAuth RBAC, multi-platform API integrations, and LLM cost optimization via quota splitting and response caching.
+\end{itemize}
+
+\vspace{1.5pt}
+\textbf{Data Science Intern --- Inikola Technologies, Hyderabad} \hfill \textit{Mar 2025 -- Dec 2025}
+\begin{itemize}
+  \item Built FastAPI NLP pipelines (sentiment scoring, topic extraction) for CraftingBrain, a live content platform.
+  \item Managed AWS infrastructure (EC2, S3, IAM, Nginx), containerized services with Docker, and deployed CI/CD with GitHub Actions.
+\end{itemize}
+
+% ===== PROJECTS =====
+\section*{Projects}
+
+\textbf{Neuroviai --- AI Social Media Automation SaaS} \hfill \textit{Mar 2025 -- Present} \quad \href{https://neuroviai.com}{neuroviai.com}\\
+\textit{Next.js 14, FastAPI, PostgreSQL, Supabase, Gemini, OpenAI, Razorpay, Docker}
+\begin{itemize}
+  \item Architected a 4-tier LLM cascade (Gemini $\rightarrow$ GROQ $\rightarrow$ HuggingFace) achieving 99.7\% generation reliability; autonomous engine posts across 5 platforms daily with 90\% cost reduction.
+  \item Integrated 8+ APIs (LinkedIn, Twitter/X, Razorpay, Supabase Auth) with OAuth flows, webhook listeners, and rate-limit handling; deployed as 4 microservices with GitHub Actions CI/CD and token-economy billing.
+\end{itemize}
+
+\vspace{1.5pt}
+\textbf{Sebastian --- Autonomous AI Personal Assistant} \hfill \textit{Jan 2026 -- Present}\\
+\textit{Python, FastAPI, PostgreSQL, pgvector, Gemini Live, Groq, Playwright, Edge TTS}
+\begin{itemize}
+  \item Built a 10-phase autonomous assistant with 59+ tools: OS \& browser control, Gemini Live audio streaming, screen/camera vision, and 110+ external API integrations.
+  \item Designed multi-layer memory (episodic, semantic, behavioral) with pgvector cosine search + time-decay; 3-tier safety gate (GREEN/YELLOW/RED) with audit logging and a Discord voice bridge via py-cord.
+\end{itemize}
+
+\vspace{1.5pt}
+\textbf{AI YouTube Shorts Automation Pipeline} \hfill \textit{Jan 2026 -- Present} \quad \href{https://github.com/JeetInTech/Youtube-shorts-Automation}{GitHub}\\
+\textit{Python, Ollama (local LLM), FFmpeg, edge-tts, Pexels API, YouTube Data API v3}
+\begin{itemize}
+  \item End-to-end pipeline: trend scraping (Reddit, HN) $\rightarrow$ LLM scripting $\rightarrow$ voiceover $\rightarrow$ FFmpeg video assembly $\rightarrow$ YouTube upload; Task Scheduler enables unattended daily posting.
+  \item Multi-channel mode generates 4+ videos per batch; script quality scorer filters low-confidence outputs before production.
+\end{itemize}
+
+\vspace{1.5pt}
+\textbf{Neurovia Careers --- AI-Powered ATS Resume Builder} \hfill \textit{Nov 2025 -- Present} \quad \href{https://github.com/JeetInTech/CvForge-Online}{GitHub}\\
+\textit{React 18, TypeScript, FastAPI, Supabase, Groq LLM, Vite}
+\begin{itemize}
+  \item Weighted ATS scoring engine (keyword 40\%, completeness 35\%, format 25\%) targeting 90\%+ compatibility across 15+ job categories; custom LaTeX export system with 4 professional templates.
+  \item Groq-powered AI bullet/summary generation; Supabase auth with cloud CV storage and shareable public links.
+\end{itemize}
+
+% ===== EDUCATION =====
+\section*{Education}
+\textbf{B.Tech in Computer Science \& Engineering (AI \& ML)} \hfill \textit{Expected June 2026}\\
+Malla Reddy University, Hyderabad \hfill GPA: 8.0\,/\,10.0
+
+\end{document}

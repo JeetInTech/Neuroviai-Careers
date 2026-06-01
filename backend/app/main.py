@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
-from .routers import auth, profile, cv, ats, document, linkedin, ai
+from .routers import auth, profile, cv, ats, document, linkedin, ai, guest
 import logging
 
 # Configure logging
@@ -41,6 +41,7 @@ app.include_router(ats.router)
 app.include_router(document.router)
 app.include_router(linkedin.router)
 app.include_router(ai.router)
+app.include_router(guest.router)
 
 @app.get("/")
 async def root():

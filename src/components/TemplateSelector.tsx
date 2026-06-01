@@ -77,8 +77,10 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               )}
 
               {/* Template Preview Icon */}
-              <div className="text-3xl mb-2">
-                {template.preview}
+              <div className="mb-2">
+                <span className="inline-block text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded bg-indigo-50/50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/20">
+                  {template.preview}
+                </span>
               </div>
 
               {/* Template Info */}

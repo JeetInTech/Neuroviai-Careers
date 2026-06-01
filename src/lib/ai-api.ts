@@ -151,7 +151,8 @@ export const aiApi = {
   async tailorResumeToJob(
     cvData: Record<string, unknown>,
     jobDescription: string,
-    jobTitle?: string
+    jobTitle?: string,
+    mode?: string
   ): Promise<{
     tailored_cv: Record<string, unknown>;
     match_score: number;
@@ -169,12 +170,65 @@ export const aiApi = {
         cv_data: cvData,
         job_description: jobDescription,
         job_title: jobTitle,
+        mode: mode || 'balanced'
       }),
     });
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.detail || 'Failed to tailor resume');
+    }
+    
+    return response.json();
+  },
+
+  /**
+   * Scrapes job description text from a job board URL
+   */
+  async scrapeJobUrl(url: string): Promise<string> {
+    const response = await fetch(`${API_BASE}/ai/scrape-job-url`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ url }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to scrape job URL');
+    }
+    
+    const data = await response.json();
+    return data.scraped_text;
+  },
+
+  /**
+   * Generates a pre-optimization audit report for CV and Job Description
+   */
+  async preOptimizeAnalysis(
+    cvData: Record<string, unknown>,
+    jobDescription: string
+  ): Promise<{
+    ats_match_score: number;
+    missing_keywords: string[];
+    overlapping_skills: string[];
+    role_alignment: string;
+    experience_relevance: string;
+    recruiter_concerns: string[];
+    strengths: string[];
+    recommended_opportunities: string[];
+  }> {
+    const response = await fetch(`${API_BASE}/ai/pre-optimize-analysis`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        cv_data: cvData,
+        job_description: jobDescription,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to generate pre-optimization report');
     }
     
     return response.json();

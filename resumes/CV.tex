@@ -1,0 +1,204 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.6in]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+\setlist[itemize]{leftmargin=*, noitemsep, topsep=3pt, parsep=1pt}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\titlespacing{\section}{0pt}{10pt}{5pt}
+\titleformat{\section}{\large\bfseries\scshape}{}{0pt}{}[\titlerule]
+\hypersetup{colorlinks=true, urlcolor=blue!70!black, linkcolor=blue!70!black}
+
+\begin{document}
+
+% ===== HEADER =====
+\begin{center}
+{\LARGE \textbf{SANGRAMJEET GHOSH}} \\[6pt]
+{\normalsize
+  +91 9059150937 \quad $|$ \quad
+  \href{mailto:sangramjeet47@gmail.com}{sangramjeet47@gmail.com} \quad $|$ \quad
+  \href{https://www.linkedin.com/in/sangramjeetghosh}{linkedin.com/in/sangramjeetghosh}
+}\\[2pt]
+{\normalsize
+  \href{https://github.com/JeetInTech}{github.com/JeetInTech} \quad $|$ \quad
+  \href{https://sangramjeet.me}{sangramjeet.me} \quad $|$ \quad
+  \href{https://neuroviai.com}{neuroviai.com} \quad $|$ \quad
+  \href{https://drive.google.com/drive/folders/1ZQd-DeX-rXlEVDTwDJfjLjnG7iPc_fEw}{Certificates Portfolio}
+}
+\end{center}
+
+\vspace{2pt}
+
+% ===== PROFESSIONAL SUMMARY =====
+\section*{Professional Summary}
+
+Versatile AI \& Full-Stack Engineer with hands-on experience building and shipping production-grade SaaS platforms, autonomous AI systems, and content automation pipelines. Designed and launched Neuroviai — a live multi-provider LLM automation SaaS. Built Sebastian, a fully autonomous assistant with real-time voice, vision, OS control, and 110+ API integrations. Applied AI researcher specializing in constraint-driven system design with proven ability to take products from concept to deployment across cloud platforms. Actively seeking opportunities to build impactful, scalable technology.
+
+% ===== EDUCATION =====
+\section*{Education}
+
+\textbf{Bachelor of Technology (B.Tech) in Computer Science and Engineering} \hfill \textit{Expected June 2026} \\
+Specialization in Artificial Intelligence and Machine Learning \\
+Malla Reddy University, Hyderabad, Telangana \hfill \textbf{GPA: 8.0 / 10.0}
+
+\begin{itemize}
+\item \textbf{Relevant Coursework:} Data Structures \& Algorithms, Machine Learning, Deep Learning, Natural Language Processing, Computer Vision, Database Management Systems, Cloud Computing, Statistics \& Probability
+\item \textbf{Thesis:} \textit{Design and Implementation of Cost-Constrained AI Automation Systems} (Feb 2026) --- Full-stack SaaS platform (Neuroviai) with 15,000+ lines of Python and 12,000+ lines of TypeScript; regulatory-aligned data stewardship (India's DPDPA 2023, EU AI Act).
+\end{itemize}
+
+% ===== TECHNICAL SKILLS =====
+\section*{Technical Skills}
+
+\begin{tabularx}{\textwidth}{@{} p{2.6cm} X @{}}
+\textbf{Languages}     & Python, JavaScript, TypeScript, SQL, HTML5, CSS3, Bash \\[3pt]
+\textbf{AI / ML}       & LangChain, LangGraph, Gemini API, OpenAI API, Groq, RAG Pipelines, pgvector, Prompt Engineering, Multi-Agent Systems, Scikit-learn, XGBoost, LightGBM, Pandas, NumPy \\[3pt]
+\textbf{Backend}       & FastAPI, REST APIs, WebSockets, JWT/OAuth 2.0, Webhook Handlers, Microservices Architecture, Async Python \\[3pt]
+\textbf{Frontend}      & React 18, Next.js 14 (App Router), Tailwind CSS, Zustand, ShadCN/UI, Vite, TypeScript \\[3pt]
+\textbf{Databases}     & PostgreSQL, Supabase, pgvector, MongoDB (basics), Redis, SQLAlchemy ORM \\[3pt]
+\textbf{DevOps/Cloud}  & AWS (EC2, S3, IAM), Docker, Docker Compose, GitHub Actions CI/CD, Render, Vercel, Netlify, Nginx, FFmpeg \\[3pt]
+\textbf{Tools}         & Git, GitHub, Postman, VS Code, Playwright, PyAutoGUI \\
+\end{tabularx}
+
+% ===== WORK EXPERIENCE =====
+\section*{Work Experience}
+
+\textbf{Freelance AI \& Full-Stack Developer} \hfill \textit{Aug 2025 -- Present} \\
+\textit{Remote}
+\begin{itemize}
+  \item Delivered end-to-end web applications and AI-powered MVPs for 3+ startup founders, handling requirements gathering, architecture design, development, deployment, and post-launch iteration.
+  \item Built SaaS products with subscription billing (Razorpay), role-based access control (JWT/OAuth), and multi-platform API integrations.
+  \item Deployed applications across AWS, Render, Vercel, and Netlify with custom domains, SSL certificates, and CDN configuration.
+  \item Managed LLM provider costs through intelligent quota splitting, response caching, and request batching strategies.
+  \item Created integration guides and handoff documentation enabling clients' in-house teams to maintain and extend delivered products.
+\end{itemize}
+
+\vspace{4pt}
+\textbf{Data Science Intern --- Inikola Technologies} \hfill \textit{Mar 2025 -- Dec 2025} \\
+\textit{Hyderabad}
+\begin{itemize}
+  \item Developed AI-powered backend features for CraftingBrain (\href{https://craftingbrain.com}{craftingbrain.com}), a live content-technology platform, using Python and FastAPI.
+  \item Built and deployed NLP pipelines for real-time text analysis, sentiment scoring, topic extraction, and content optimization in production environments.
+  \item Managed AWS infrastructure: EC2 provisioning, S3 bucket policies, IAM role configuration, and Nginx reverse-proxy setup.
+  \item Containerized Python services using multi-stage Docker builds, reducing image size and cold-start latency.
+  \item Authored CI/CD pipelines with GitHub Actions automating linting, testing, and zero-downtime production deployments.
+\end{itemize}
+
+% ===== PROJECTS =====
+\section*{Projects}
+
+\textbf{Neuroviai --- AI-Powered Social Media Automation SaaS} \hfill \textit{Mar 2025 -- Present} \\
+\textit{Next.js 14, FastAPI, PostgreSQL, Supabase, Gemini, OpenAI, Razorpay, Docker} \hfill \href{https://neuroviai.com}{neuroviai.com}
+\begin{itemize}
+  \item Designed and built a full-stack AI SaaS platform from scratch --- product design, database schema, API architecture, AI pipelines, payment integration, and multi-platform publishing.
+  \item Architected 4-tier LLM cascade (Gemini $\rightarrow$ GROQ $\rightarrow$ HuggingFace) achieving 99.7\% text generation reliability; autonomous engine posts across 5 platforms daily, cutting operational effort by 90\%.
+  \item Integrated 8+ external APIs (LinkedIn Publishing, Twitter/X, Razorpay, Supabase Auth) with OAuth flows, webhook listeners, error handling, and rate-limit management.
+  \item Designed token-economy billing: per-user credit tracking, usage alerts, low-balance upsell triggers, and plan-upgrade flows.
+  \item Deployed as 4 microservices (Render, Supabase, Netlify, AWS S3) with GitHub Actions CI/CD and engagement analytics dashboard.
+\end{itemize}
+
+\vspace{4pt}
+\textbf{Sebastian --- Autonomous AI Personal Assistant} \hfill \textit{Jan 2026 -- Present} \\
+\textit{Python, FastAPI, PostgreSQL, pgvector, Gemini Live, Groq, Playwright, Edge TTS, PyAutoGUI}
+\begin{itemize}
+  \item Architected a 10-phase fully autonomous assistant with 59+ tools across OS control, browser automation, real-time bidirectional audio streaming (Gemini Live), camera/screen vision, and 110+ API integrations.
+  \item Built a multi-layer memory system (episodic, semantic, behavioral) using PostgreSQL + pgvector with cosine similarity search, time-decay importance weighting, and automatic memory deduplication.
+  \item Implemented a 3-tier permission gate (GREEN/YELLOW/RED) with automatic escalation and full audit logging for every tool execution.
+  \item Added Discord voice channel bridge via py-cord with real-time PCM audio resampling between Discord (48kHz stereo) and the Gemini Live pipeline (16kHz mono).
+  \item Exposed a FastAPI server with REST + WebSocket endpoints and a React PWA dashboard for cross-device access.
+\end{itemize}
+
+\vspace{4pt}
+\textbf{AI YouTube Shorts Automation Pipeline} \hfill \textit{Jan 2026 -- Present} \\
+\textit{Python, Ollama (local LLM), FFmpeg, edge-tts, Pexels API, YouTube Data API v3} \hfill \href{https://github.com/JeetInTech/Youtube-shorts-Automation}{GitHub}
+\begin{itemize}
+  \item Built a fully automated short-form video pipeline: trend scraping (Reddit, Hacker News, Google Trends) $\rightarrow$ LLM script generation with quality scoring $\rightarrow$ voiceover synthesis $\rightarrow$ stock footage assembly (FFmpeg) $\rightarrow$ YouTube upload with metadata.
+  \item Engineered Windows Task Scheduler integration for unattended daily posting; multi-channel mode generates 4+ videos per run.
+  \item Implemented a script quality scoring module to filter low-confidence AI scripts before production, with a Streamlit analytics dashboard for tracking upload history and performance metrics.
+\end{itemize}
+
+\vspace{4pt}
+\textbf{Neurovia Careers --- AI-Powered ATS Resume Builder} \hfill \textit{Nov 2025 -- Present} \\
+\textit{React 18, TypeScript, FastAPI, Supabase, Groq LLM, Vite} \hfill \href{https://github.com/JeetInTech/CvForge-Online}{GitHub}
+\begin{itemize}
+  \item Built a full-stack ATS resume builder with a weighted scoring engine: keyword match (40\%), content completeness (35\%), formatting quality (25\%) targeting 90\%+ ATS compatibility across 15+ job categories.
+  \item Engineered a custom LaTeX export system with 4 professional templates (Simple, ModernCV, Awesome-CV, Deedy) producing clean, recruiter-safe PDFs.
+  \item Integrated Groq LLM API for AI-assisted bullet generation, summary writing, and skill recommendations with Supabase auth, cloud CV storage, and shareable CV links.
+\end{itemize}
+
+\vspace{4pt}
+\textbf{NeuroviaI --- Multi-Agent AI Data Analytics Platform} \hfill \textit{Oct 2025 -- Present} \\
+\textit{Python, PySide6 (Qt6), Groq, Gemini, Ollama, Scikit-learn, XGBoost, LightGBM, Matplotlib}
+\begin{itemize}
+  \item Developed a desktop analytics platform using a 6-agent LLM pipeline (Profiler, Cleaner, Feature Engineer, Model Selector, Visualizer, Orchestrator) each executing think $\rightarrow$ act $\rightarrow$ observe loops.
+  \item Benchmarked 11 ML models (Random Forest, XGBoost, LightGBM, SVM, etc.) with cross-validation and automated feature importance analysis.
+  \item Built 20+ chart types (2D + 3D with matplotlib) across 5 themeable styles; implemented LLM provider failover: Groq $\rightarrow$ Gemini $\rightarrow$ Ollama for full offline capability.
+\end{itemize}
+
+\vspace{4pt}
+\textbf{Virtual Therapist --- LangGraph Agentic AI System} \hfill \textit{Sep -- Oct 2025} \\
+\textit{LangGraph, LangChain, Python, PostgreSQL} \hfill \href{https://github.com/JeetInTech/Virtual-Therapist---LangGraph-Agentic-AI-System}{GitHub}
+\begin{itemize}
+  \item Designed a stateful 3-agent LangGraph system (intake, emotion-detection, therapeutic-response) with deterministic state transitions, structured prompt contracts, and JSON output validation.
+  \item Integrated speech-to-text input and adaptive LLM responses tuned to detected emotional context; persisted conversation memory in PostgreSQL.
+\end{itemize}
+
+% ===== PUBLICATIONS & RESEARCH =====
+\section*{Publications \& Research}
+
+\textbf{Design and Implementation of a Cost-Constrained Multi-Platform AI Automation System} \\
+\textit{Independent Researcher --- Manuscript in Preparation (Case Study on Neuroviai)}
+\begin{itemize}
+  \item Engineered a deterministic four-tier AI fallback strategy (Gemini, GROQ, HuggingFace) achieving 99.7\% text generation reliability through provider-level redundancy.
+  \item Documented orchestration-free microservice patterns to maximize free-tier resource allocations across ten independent server processes.
+  \item Formalized 23 distinct engineering trade-offs regarding cold-start mitigation, ephemeral storage, and security in zero-budget environments.
+\end{itemize}
+
+% ===== ACHIEVEMENTS =====
+\section*{Achievements \& Recognition}
+
+\begin{itemize}
+  \item \textbf{Winner --- IDEATHON 2.0} (University-level Ideation Competition): Developed a high-impact AI solution evaluated by industry experts for technical execution, feasibility, and market potential.
+  \item \textbf{Participant --- METALLOOP 2K23} (National-level Hackathon): Built a functional prototype under intensive time constraints; received official certification for technical execution.
+  \item \textbf{Self-Published Author --- Amazon KDP:} Authored \textit{``The Future of Touchless Technology;''} managed end-to-end digital publishing lifecycle including automated manuscript formatting and global distribution. \href{https://www.amazon.com/dp/B0FBLC1RLT}{amazon.com/dp/B0FBLC1RLT}
+\end{itemize}
+
+% ===== CERTIFICATIONS =====
+\section*{Certifications}
+\textit{All certificates verified and available at:} \href{https://drive.google.com/drive/folders/1ZQd-DeX-rXlEVDTwDJfjLjnG7iPc_fEw}{\textbf{Certificate Portfolio (Google Drive)}}
+
+\begin{itemize}
+  \item \textbf{Amazon Web Services (AWS)} --- Cloud Practitioner Essentials / Foundations
+  \item \textbf{Google Cloud} --- Cloud Computing Fundamentals
+  \item \textbf{Coursera} --- Machine Learning Specialization / AI \& Data Science tracks
+  \item \textbf{Microsoft Learn} --- Azure AI Fundamentals / Developer certifications
+  \item \textbf{NPTEL} --- Programming and Data Science courses (IIT-certified)
+\end{itemize}
+
+% ===== EXTRACURRICULAR =====
+\section*{Extracurricular \& Leadership}
+\begin{itemize}
+  \item \textbf{Open-Source Contributor:} Actively maintain public repositories on GitHub (\href{https://github.com/JeetInTech}{github.com/JeetInTech}) with multiple AI, web, and data projects.
+  \item \textbf{Technical Mentor:} Guide junior students in AI/ML concepts, project development, and hackathon preparation.
+  \item \textbf{Hackathon Participant:} Regular competitor in national-level hackathons; strong track record of building functional prototypes under 24--48 hour deadlines.
+  \item \textbf{Freelance Consultant:} Advise early-stage startup founders on technology stack selection, architecture design, and MVP scoping.
+\end{itemize}
+
+% ===== LANGUAGES =====
+\section*{Languages}
+English (Professional Proficiency) \quad $|$ \quad Hindi (Native) \quad $|$ \quad Bengali (Native)
+
+\vfill
+\begin{center}
+  \small\textit{References available upon request.}
+\end{center}
+
+\end{document}

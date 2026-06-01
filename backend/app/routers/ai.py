@@ -162,10 +162,31 @@ async def suggest_improvements(request: SuggestionsRequest):
 # AI RESUME TAILORING ENDPOINT
 # ============================================
 
+class ScrapeJobUrlRequest(BaseModel):
+    url: str
+
+class ScrapeJobUrlResponse(BaseModel):
+    scraped_text: str
+
+class PreOptimizeRequest(BaseModel):
+    cv_data: Dict[str, Any]
+    job_description: str
+
+class PreOptimizeResponse(BaseModel):
+    ats_match_score: int
+    missing_keywords: List[str]
+    overlapping_skills: List[str]
+    role_alignment: str
+    experience_relevance: str
+    recruiter_concerns: List[str]
+    strengths: List[str]
+    recommended_opportunities: List[str]
+
 class TailorResumeRequest(BaseModel):
     cv_data: Dict[str, Any]
     job_description: str
     job_title: Optional[str] = None
+    mode: Optional[str] = 'balanced'
 
 
 class JobAnalysis(BaseModel):
@@ -179,6 +200,29 @@ class TailorResumeResponse(BaseModel):
     match_score: int
     job_analysis: JobAnalysis
     optimizations_made: List[str]
+
+
+@router.post("/scrape-job-url", response_model=ScrapeJobUrlResponse)
+async def scrape_job_url(request: ScrapeJobUrlRequest):
+    """Scrape job description from a job board URL"""
+    try:
+        scraped_text = await ai_service.scrape_job_description_url(request.url)
+        return ScrapeJobUrlResponse(scraped_text=scraped_text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Job URL scraping failed: {str(e)}")
+
+
+@router.post("/pre-optimize-analysis", response_model=PreOptimizeResponse)
+async def pre_optimize_analysis(request: PreOptimizeRequest):
+    """Generate pre-optimization audit report for CV and Job Description"""
+    try:
+        report = await ai_service.pre_optimize_analysis(
+            cv_data=request.cv_data,
+            job_description=request.job_description
+        )
+        return PreOptimizeResponse(**report)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Pre-optimization analysis failed: {str(e)}")
 
 
 @router.post("/tailor-resume", response_model=TailorResumeResponse)
@@ -197,7 +241,8 @@ async def tailor_resume_to_job(request: TailorResumeRequest):
         result = await ai_service.tailor_resume_to_job(
             cv_data=request.cv_data,
             job_description=request.job_description,
-            job_title=request.job_title
+            job_title=request.job_title,
+            mode=request.mode
         )
         return TailorResumeResponse(
             tailored_cv=result['tailored_cv'],

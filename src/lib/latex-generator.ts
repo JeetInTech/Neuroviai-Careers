@@ -510,14 +510,16 @@ function generateATSCVPreamble(): string {
 \\usepackage{hyperref}
 \\usepackage{titlesec}
 \\usepackage{tabularx}
+\\usepackage{xcolor}
+\\definecolor{linkblue}{RGB}{26, 86, 219}
 
 \\setlist[itemize]{leftmargin=*, noitemsep, topsep=3pt, parsep=1pt}
 \\pagestyle{empty}
 \\setlength{\\parindent}{0pt}
 \\setlength{\\parskip}{2pt}
 \\titlespacing{\\section}{0pt}{10pt}{5pt}
-\\titleformat{\\section}{\\large\\bfseries\\scshape}{}{0pt}{}[\\titlerule]
-\\hypersetup{colorlinks=true, linkcolor=blue!70!black, urlcolor=blue!70!black}
+\\titleformat{\\section}{\\large\\bfseries}{}{0pt}{}[\\titlerule]
+\\hypersetup{colorlinks=true, linkcolor=linkblue, urlcolor=linkblue}
 
 \\begin{document}
 `;
@@ -676,22 +678,33 @@ ${entries}
 }
 
 function generateATSCVCertificationsFromData(data: CVData): string {
-  if (data.certifications.length === 0) return '';
+  const validCerts = data.certifications.filter(c => c.name?.trim() || c.issuer?.trim());
+  if (validCerts.length === 0 && !data.cert_portfolio_url) return '';
 
-  const entries = data.certifications.map(cert => {
-    const certName = cert.url
-      ? `\\href{${cert.url}}{${escapeLatex(cert.name)}}`
-      : escapeLatex(cert.name);
-    let line = `\\textbf{${escapeLatex(cert.issuer)}} -- ${certName}`;
-    if (cert.date) line += ` \\hfill ${cert.date}`;
-    return line;
-  }).join(' \\\\\n');
-
-  return `
+  let output = `
 \\section*{Certifications}
 
-${entries}
 `;
+
+  if (data.cert_portfolio_url) {
+    output += `\\textit{All certificates are verified and available at:} \\href{${data.cert_portfolio_url}}{\\textbf{Certificate Portfolio}}\\\\[4pt]
+`;
+  }
+
+  if (validCerts.length > 0) {
+    const items = validCerts.map(cert => {
+      const certName = cert.url
+        ? `\\href{${cert.url}}{${escapeLatex(cert.name)}}`
+        : escapeLatex(cert.name);
+      const issuer = cert.issuer?.trim();
+      let line = issuer ? `\\textbf{${escapeLatex(issuer)}} -- ${certName}` : `\\textbf{${certName}}`;
+      if (cert.date) line += ` \\hfill ${cert.date}`;
+      return `\\item ${line}`;
+    }).join('\n');
+    output += `\\begin{itemize}[leftmargin=*,noitemsep,topsep=2pt]\n${items}\n\\end{itemize}`;
+  }
+
+  return output + '\n';
 }
 
 function generateATSCVLanguagesFromData(data: CVData): string {
@@ -711,6 +724,46 @@ function generateATSCVCustomSectionsFromData(data: CVData): string {
   if (data.custom_sections.length === 0) return '';
 
   return data.custom_sections.map(section => {
+    const sectionType = section.section_type || 'entries';
+
+    if (sectionType === 'bullets') {
+      // Render as itemize list — \item \textbf{title}: description
+      const items = section.items.map(item => {
+        let line = `\\item \\textbf{${escapeLatex(item.title)}}`;
+        if (item.subtitle) line += ` (${escapeLatex(item.subtitle)})`;
+        if (item.description) line += `: ${escapeLatex(item.description)}`;
+        return line;
+      }).join('\n');
+      return `
+\\section*{${escapeLatex(section.title)}}
+
+\\begin{itemize}
+${items}
+\\end{itemize}
+`;
+    }
+
+    if (sectionType === 'profiles') {
+      // Render as tabularx — label | link
+      const rows = section.items.map(item => {
+        const raw = item.subtitle || '';
+        const isUrl = /^https?:\/\//.test(raw) || (raw && !raw.includes(' '));
+        const display = raw.replace(/^https?:\/\/(www\.)?/, '');
+        const linkCell = isUrl && raw
+          ? `\\href{${raw.startsWith('http') ? raw : 'https://' + raw}}{${escapeLatex(display)}}`
+          : escapeLatex(raw);
+        return `\\textbf{${escapeLatex(item.title)}} & ${linkCell} \\\\`;
+      }).join('\n');
+      return `
+\\section*{${escapeLatex(section.title)}}
+
+\\begin{tabularx}{\\textwidth}{@{} l X @{}}
+${rows}
+\\end{tabularx}
+`;
+    }
+
+    // Default 'entries' style
     const entries = section.items.map(item => {
       let line = '';
       if (item.title) line += `\\textbf{${escapeLatex(item.title)}}`;
@@ -732,10 +785,10 @@ ${entries}
  * Generate ATS-optimized CV LaTeX (multi-page, comprehensive).
  * Uses the CV Engine — includes ALL data, no limits.
  */
-export function generateATSCVLaTeX(cv: CV): string {
-  const data = buildCVData(cv);
+export function generateATSCVLaTeX(cv: CV, options?: { certPortfolioUrl?: string; includeReferences?: boolean }): string {
+  const data = buildCVData(cv, options);
 
-  const sections = [
+  const sections: string[] = [
     generateATSCVPreamble(),
     generateATSCVHeaderFromData(data),
     generateATSCVSummaryFromData(data),
@@ -746,10 +799,15 @@ export function generateATSCVLaTeX(cv: CV): string {
     generateATSCVCertificationsFromData(data),
     generateATSCVLanguagesFromData(data),
     generateATSCVCustomSectionsFromData(data),
-    '\n\\end{document}\n',
   ];
 
-  return sections.join('');
+  if (data.include_references) {
+    sections.push('\n\\vspace{10pt}\n\\begin{center}\n\\textit{References available upon request.}\n\\end{center}\n');
+  }
+
+  sections.push('\n\\end{document}\n');
+
+  return sections.filter(Boolean).join('');
 }
 
 // ============================================
@@ -933,8 +991,8 @@ export function generateATSResumeLaTeX(
 /**
  * Downloads ATS CV LaTeX as .tex file
  */
-export function downloadATSCVLaTeX(cv: CV, filename?: string): void {
-  const latex = generateATSCVLaTeX(cv);
+export function downloadATSCVLaTeX(cv: CV, filename?: string, options?: { certPortfolioUrl?: string; includeReferences?: boolean }): void {
+  const latex = generateATSCVLaTeX(cv, options);
   const blob = new Blob([latex], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

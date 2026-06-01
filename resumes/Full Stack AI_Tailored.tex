@@ -1,0 +1,103 @@
+\documentclass[9.5pt]{article}
+\usepackage[margin=0.4in, top=0.35in, bottom=0.35in]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+\setlist[itemize]{leftmargin=1.2em, noitemsep, topsep=1pt, parsep=0pt}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\titlespacing{\section}{0pt}{4pt}{1.5pt}
+\titleformat{\section}{\bfseries\uppercase}{}{0pt}{}[\titlerule]
+\hypersetup{hidelinks}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+
+\begin{document}
+
+% ===== HEADER =====
+\begin{center}
+  {\large \textbf{SANGRAMJEET GHOSH}} \\[2pt]
+  {\small
+    +91~9059150937 \;|\;
+    \href{mailto:sangramjeet47@gmail.com}{sangramjeet47@gmail.com} \;|\;
+    \href{https://www.linkedin.com/in/sangramjeetghosh}{linkedin.com/in/sangramjeetghosh} \;|\;
+    \href{https://github.com/JeetInTech}{github.com/JeetInTech} \;|\;
+    \href{https://sangramjeet.me}{sangramjeet.me} \;|\;
+    \href{https://neuroviai.com}{neuroviai.com}
+  }
+\end{center}
+
+\vspace{-2pt}
+\noindent\rule{\textwidth}{0.4pt}
+\vspace{-4pt}
+
+% ===== SUMMARY =====
+\section*{Summary}
+Full Stack AI Engineer with experience in building and shipping production-grade AI-powered products, focusing on responsive UIs, performant APIs, and seamless user experiences. Proficient in designing and developing scalable web applications, with a strong foundation in both frontend and backend technologies. Passionate about creating high-quality, interactive products that leverage AI and machine learning capabilities.
+
+% ===== SKILLS =====
+\section*{Skills}
+\begin{tabularx}{\textwidth}{@{} p{2.0cm} X @{}}
+\textbf{Frontend}   & React 18, Next.js 14 (App Router / Static Export), TypeScript, Tailwind CSS, ShadCN/UI, Zustand, Framer Motion, Vite, HTML5, CSS3, HTML5 Canvas (familiar) \\[1pt]
+\textbf{Backend}    & FastAPI, Node.js, Express, REST APIs, WebSockets, JWT/OAuth 2.0, Webhook Handlers, Microservices, Async Python \\[1pt]
+\textbf{AI / LLM}   & Gemini API, OpenAI API, Groq, LangChain, LangGraph, RAG Pipelines, pgvector, Prompt Engineering, Multi-Agent Systems \\[1pt]
+\textbf{Databases}  & PostgreSQL, Supabase, pgvector, Redis, MongoDB (basics), SQLAlchemy, MySQL (prior exposure) \\[1pt]
+\textbf{DevOps}     & Docker, GitHub Actions CI/CD, AWS (EC2, S3, IAM), Render, Netlify, Vercel, Nginx \\[1pt]
+\textbf{Languages}  & Python, TypeScript, JavaScript, SQL, Bash \\
+\end{tabularx}
+
+% ===== EXPERIENCE =====
+\section*{Experience}
+
+\textbf{Freelance Full Stack AI Developer} \hfill \textit{Aug 2025 -- Present} \quad \textit{Remote}
+\begin{itemize}
+  \item Built end-to-end AI-powered web apps for 3+ startup founders: React/Next.js frontends, FastAPI backends, LLM pipelines, and cloud deployments with full handoff documentation.
+  \item Delivered subscription billing (Razorpay), JWT/OAuth RBAC, real-time dashboards, and multi-platform API integrations; managed LLM costs via quota splitting and response caching.
+\end{itemize}
+
+\vspace{1.5pt}
+\textbf{Data Science Intern --- Inikola Technologies, Hyderabad} \hfill \textit{Mar 2025 -- Dec 2025}
+\begin{itemize}
+  \item Developed FastAPI NLP features (sentiment scoring, topic extraction) for CraftingBrain, a live content-tech platform serving real users.
+  \item Containerized services with Docker, managed AWS (EC2, S3, IAM, Nginx), and shipped CI/CD pipelines via GitHub Actions for zero-downtime deploys.
+\end{itemize}
+
+% ===== PROJECTS =====
+\section*{Projects}
+
+\textbf{AI YouTube Shorts Automation Pipeline} \hfill \textit{Jan 2025 -- Present} \quad \href{https://github.com/JeetInTech/AI-YouTube-Shorts-Automation-Pipeline}{github.com/JeetInTech/AI-YouTube-Shorts-Automation-Pipeline}\\
+\textit{Python, FFmpeg, OpenAI API, Node.js, Express, REST APIs, WebSockets}
+\begin{itemize}
+  \item Built an automated pipeline for generating and publishing YouTube Shorts using AI-powered video generation and editing capabilities.
+  \item Utilized FFmpeg for video rendering and assembly, and integrated with OpenAI API for AI-powered video content creation.
+\end{itemize}
+
+\vspace{1.5pt}
+\textbf{Neuroviai --- AI Social Media Automation SaaS} \hfill \textit{Mar 2025 -- Present} \quad \href{https://neuroviai.com}{neuroviai.com}\\
+\textit{Next.js 14, FastAPI, PostgreSQL, Supabase, Gemini, OpenAI, Razorpay, Docker, GitHub Actions}
+\begin{itemize}
+  \item Built the complete product: Next.js 14 App Router frontend, FastAPI microservice backend, and Supabase-backed database; 50+ daily active users, 99.5\% uptime.
+  \item Engineered a 4-tier LLM fallback (Gemini $\rightarrow$ GROQ $\rightarrow$ HuggingFace) for 99.7\% generation reliability; autonomous engine posts across 5 platforms daily, cutting manual effort by 90\%.
+\end{itemize}
+
+\vspace{1.5pt}
+\textbf{Neurovia Careers --- AI-Powered ATS Resume Builder} \hfill \textit{Nov 2025 -- Present} \quad \href{https://github.com/JeetInTech/CvForge-Online}{GitHub}\\
+\textit{React 18, TypeScript, Vite, Tailwind CSS, FastAPI, Supabase, Groq LLM}
+\begin{itemize}
+  \item Built a complete full-stack SaaS: React/TypeScript frontend with live CV preview and drag-and-drop section reordering; FastAPI backend with 15+ API endpoints (auth, CV CRUD, AI generation, PDF parse).
+  \item Engineered a weighted ATS scoring engine (keyword 40\%, completeness 35\%, format 25\%) targeting 90\%+ compatibility across 15+ job categories; custom LaTeX export system with 4 professional templates.
+\end{itemize}
+
+% ===== EDUCATION =====
+\section*{Education}
+\textbf{B.Tech in Computer Science \& Engineering (AI \& ML)} \hfill \textit{Expected June 2026}\\
+Malla Reddy University, Hyderabad \hfill GPA: 8.0\,/\,10.0 \quad|\quad Winner --- IDEATHON 2.0 \quad|\quad AWS, GCP, Coursera ML Certified
+
+\end{document}

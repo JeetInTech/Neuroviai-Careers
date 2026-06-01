@@ -44,18 +44,18 @@ export default function Login() {
   const isEmail = usernameOrEmail.includes('@');
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-transparent flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-gray-900 dark:text-white">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <Mail className="w-12 h-12 text-indigo-600" />
+          <Mail className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           Sign in to your account
         </h2>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white dark:bg-slate-900 py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100 dark:border-white/5">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {successMessage && (
               <div className="bg-green-50 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="status">

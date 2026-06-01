@@ -649,51 +649,62 @@ export default function CVEditor() {
     setCV(updatedCV);
     setShowUploadModal(false);
     
-    // Auto-save the uploaded data
-    try {
-      setSaving(true);
-      const cvPayload = {
-        template: updatedCV.template,
-        target_role: updatedCV.target_role,
-        personal_info: updatedCV.personal_info,
-        education: updatedCV.education,
-        experience: updatedCV.experience,
-        skills: updatedCV.skills,
-        languages: updatedCV.languages,
-        certifications: updatedCV.certifications,
-        projects: updatedCV.projects || [],
-        accent_color: updatedCV.accent_color,
-        is_grayscale: updatedCV.is_grayscale,
-      };
+    // Skip auto-save if not logged in — data is loaded, user can save when ready
+    if (!user) return;
 
-      if (isTemplate || !updatedCV.id) {
-        const result = await api.createCV(cvPayload);
-        if (result.success && result.cv) {
-          // Merge returned data with local state to preserve all fields
-          setCV({
-            ...updatedCV,
-            ...result.cv,
-            personal_info: { ...updatedCV.personal_info, ...result.cv.personal_info },
-          } as unknown as CV);
-          navigate(`/cv/edit/${result.cv.id}`, { replace: true });
+    // Auto-save the uploaded data with one retry
+    const attemptSave = async (attempt: number) => {
+      try {
+        setSaving(true);
+        const cvPayload = {
+          template: updatedCV.template,
+          target_role: updatedCV.target_role,
+          personal_info: updatedCV.personal_info,
+          education: updatedCV.education,
+          experience: updatedCV.experience,
+          skills: updatedCV.skills,
+          languages: updatedCV.languages,
+          certifications: updatedCV.certifications,
+          projects: updatedCV.projects || [],
+          accent_color: updatedCV.accent_color,
+          is_grayscale: updatedCV.is_grayscale,
+        };
+
+        if (isTemplate || !updatedCV.id) {
+          const result = await api.createCV(cvPayload);
+          if (result.success && result.cv) {
+            setCV({
+              ...updatedCV,
+              ...result.cv,
+              personal_info: { ...updatedCV.personal_info, ...result.cv.personal_info },
+            } as unknown as CV);
+            navigate(`/cv/edit/${result.cv.id}`, { replace: true });
+          }
+        } else {
+          const result = await api.updateCV(updatedCV.id, cvPayload);
+          if (result.success && result.cv) {
+            setCV({
+              ...updatedCV,
+              ...result.cv,
+              personal_info: { ...updatedCV.personal_info, ...result.cv.personal_info },
+            } as unknown as CV);
+            setLastSaved(new Date());
+          }
         }
-      } else {
-        const result = await api.updateCV(updatedCV.id, cvPayload);
-        if (result.success && result.cv) {
-          // Merge returned data with local state to preserve all fields
-          setCV({
-            ...updatedCV,
-            ...result.cv,
-            personal_info: { ...updatedCV.personal_info, ...result.cv.personal_info },
-          } as unknown as CV);
+      } catch (err) {
+        if (attempt < 2) {
+          // Retry once after a short delay
+          setTimeout(() => attemptSave(attempt + 1), 1500);
+        } else {
+          console.error('Error auto-saving uploaded data:', err);
+          setError('__import_save_failed__');
         }
+      } finally {
+        setSaving(false);
       }
-    } catch (error) {
-      console.error('Error auto-saving uploaded data:', error);
-      setError('Data imported but failed to save. Please save manually.');
-    } finally {
-      setSaving(false);
-    }
+    };
+
+    attemptSave(1);
   };
 
   // Section order manipulation functions
@@ -807,13 +818,108 @@ export default function CVEditor() {
     }
   };
 
+  const handlePrintFallback = () => {
+    if (!cvRef.current) return;
+
+    const originalId = cvRef.current.id;
+    cvRef.current.id = 'print-resume-area';
+
+    // Create a temporary stylesheet for standard vector print layout
+    const styleEl = document.createElement('style');
+    styleEl.id = 'print-style-fallback';
+    styleEl.innerHTML = `
+      @media print {
+        /* General page layout */
+        @page {
+          size: letter;
+          margin: 0.45in !important;
+        }
+        
+        body {
+          background: #ffffff !important;
+          color: #000000 !important;
+          font-family: Arial, sans-serif !important;
+        }
+
+        /* Hide all UI components except the resume content box */
+        body > *, 
+        #root > *,
+        main > *,
+        .sticky,
+        .w-1\\/2,
+        button,
+        nav,
+        header:not(#print-resume-area header) {
+          display: none !important;
+          visibility: hidden !important;
+        }
+
+        /* Ensure the printable CV container is isolated and takes 100% width at 1:1 scale */
+        #print-resume-area,
+        #print-resume-area * {
+          display: block !important;
+          visibility: visible !important;
+        }
+
+        #print-resume-area {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          transform: none !important;
+          scale: 1 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-shadow: none !important;
+          border: none !important;
+          background: #ffffff !important;
+        }
+
+        /* Prevent ugly page breaks inside lists, cards, and sections */
+        li, 
+        tr, 
+        p,
+        h2,
+        h3,
+        section,
+        .pb-3,
+        .mb-6 {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+
+        /* Ensure background colors don't get stripped by chrome print engines */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+    `;
+    document.head.appendChild(styleEl);
+
+    // Trigger vector print engine
+    window.print();
+
+    // Clean up temporary style element and ID mappings
+    setTimeout(() => {
+      if (cvRef.current) {
+        cvRef.current.id = originalId;
+      }
+      const addedStyle = document.getElementById('print-style-fallback');
+      if (addedStyle) {
+        addedStyle.remove();
+      }
+    }, 1000);
+  };
+
   const handleDownloadPDF = async () => {
     if (!cv) return;
 
     try {
       setError('');
 
-      // Generate LaTeX with template-specific section ordering
+      // Generate LaTeX with template-specific section ordering - standardizing on gold single-column formats
       let latexTemplate: LaTeXExportOptions['template'] = 'professional';
       const templateMap: Record<string, LaTeXExportOptions['template']> = {
         'modern-minimal': 'minimal', 'minimal': 'minimal',
@@ -822,7 +928,18 @@ export default function CVEditor() {
         'fresher': 'fresher', 'entry-level': 'fresher',
         'data-scientist': 'data-scientist', 'data-science': 'data-scientist',
         'ai-ml-engineer': 'ai-ml', 'ai-ml': 'ai-ml',
+        'academic': 'professional', 'devops-engineer': 'software-engineer',
+        'executive': 'professional', 'project-manager': 'professional',
+        'business-analyst': 'minimal', 'marketing': 'minimal',
+        'content-writer': 'professional',
+        
+        // Map legacy creative/non-compliant layouts to ATS-friendly single-columns
+        'creative': 'minimal', 'creative-bold': 'minimal',
+        'designer': 'minimal', 'graphic-designer': 'minimal',
+        'video-editor': 'software-engineer', 'mobile-app-developer': 'software-engineer',
+        'freelancer': 'professional'
       };
+
       if (cv.template && templateMap[cv.template]) {
         latexTemplate = templateMap[cv.template];
       } else if (cv.target_role) {
@@ -842,8 +959,10 @@ export default function CVEditor() {
       window.URL.revokeObjectURL(url);
       setShowDownloadMenu(false);
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      setError('Failed to download PDF. LaTeX compilation may be unavailable.');
+      console.warn('LaTeX compilation offline or failed. Triggering vector print fallback.', error);
+      // Seamlessly trigger selectable vector-text print fallback
+      handlePrintFallback();
+      setShowDownloadMenu(false);
     }
   };
 
@@ -863,6 +982,7 @@ export default function CVEditor() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       } catch {
+        // Fallback: If pdf compile fails on backend, download the compiled LaTeX code directly
         downloadATSCVLaTeX(cv);
       }
       setShowDownloadMenu(false);
@@ -888,6 +1008,7 @@ export default function CVEditor() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       } catch {
+        // Fallback: If pdf compile fails on backend, download the compiled LaTeX code directly
         downloadATSResumeLaTeX(cv);
       }
       setShowDownloadMenu(false);
@@ -952,7 +1073,7 @@ export default function CVEditor() {
           <div class="section">
             <div class="section-title">Skills</div>
             ${cv.skills.map(skill => `
-              <p>${skill.name} - ${skill.category} (${skill.level})</p>
+              <p>${skill.category}: ${skill.items.join(', ')}</p>
             `).join('')}
           </div>
         </body>
@@ -989,6 +1110,22 @@ export default function CVEditor() {
       'data-science': 'data-scientist',
       'ai-ml-engineer': 'ai-ml',
       'ai-ml': 'ai-ml',
+      'academic': 'professional',
+      'devops-engineer': 'software-engineer',
+      'executive': 'professional',
+      'project-manager': 'professional',
+      'business-analyst': 'minimal',
+      'marketing': 'minimal',
+      'content-writer': 'professional',
+      
+      // Map legacy creative/non-compliant layouts to gold-standard options for LaTeX code downloads
+      'creative': 'minimal',
+      'creative-bold': 'minimal',
+      'designer': 'minimal',
+      'graphic-designer': 'minimal',
+      'video-editor': 'software-engineer',
+      'mobile-app-developer': 'software-engineer',
+      'freelancer': 'professional'
     };
 
     if (cv.template && templateMap[cv.template]) {
@@ -1075,13 +1212,13 @@ export default function CVEditor() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-violet-50/30 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <div className="h-16 w-16 rounded-full border-4 border-violet-200 border-t-violet-500 animate-spin" />
             <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-violet-500" />
           </div>
-          <p className="text-gray-500 font-medium">Loading your CV...</p>
+          <p className="text-white/50 font-medium">Loading your CV...</p>
         </div>
       </div>
     );
@@ -1089,7 +1226,7 @@ export default function CVEditor() {
 
   if (!cv) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-violet-50/30 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center">
         <div className="text-center bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-8 max-w-md">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
             <X className="h-8 w-8 text-red-500" />
@@ -1097,11 +1234,11 @@ export default function CVEditor() {
           <h2 className="text-xl font-semibold text-gray-900 mb-2">CV not found</h2>
           <p className="text-gray-500 mb-6">The CV you're looking for doesn't exist or has been deleted.</p>
           <button
-            onClick={() => navigate('/portfolio')}
+            onClick={() => navigate('/profile')}
             className="inline-flex items-center px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-xl transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Portfolio
+            Back to Profile
           </button>
         </div>
       </div>
@@ -1109,7 +1246,7 @@ export default function CVEditor() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-violet-50/30 overflow-hidden">
+    <div className="h-screen flex flex-col bg-transparent text-gray-900 dark:text-white overflow-hidden">
       {/* Upload PDF Modal */}
       {showUploadModal && (
         <DocumentUpload 
@@ -1119,14 +1256,14 @@ export default function CVEditor() {
       )}
 
       {/* Modern Header */}
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
+      <div className="sticky top-0 z-50 bg-white/80 dark:bg-[#0D0D12]/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Left: Back + Title */}
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate('/portfolio')}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                onClick={() => navigate('/profile')}
+                className="p-2 text-gray-500 hover:text-gray-700 dark:text-white/60 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors"
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
@@ -1282,10 +1419,22 @@ export default function CVEditor() {
 
       {/* Error Toast */}
       {error && (
-        <div className="fixed top-20 right-4 z-50 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl shadow-lg flex items-center gap-3">
-          <X className="h-5 w-5" />
-          <span className="text-sm">{error}</span>
-          <button onClick={() => setError('')} className="text-red-500 hover:text-red-700">
+        <div className="fixed top-20 right-4 z-50 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 max-w-sm">
+          <X className="h-5 w-5 shrink-0" />
+          <span className="text-sm flex-1">
+            {error === '__import_save_failed__'
+              ? 'Data imported but failed to save.'
+              : error}
+          </span>
+          {error === '__import_save_failed__' && (
+            <button
+              onClick={() => { setError(''); handleSave(); }}
+              className="text-xs font-semibold bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded-lg shrink-0 transition-colors"
+            >
+              Retry Save
+            </button>
+          )}
+          <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 shrink-0">
             <X className="h-4 w-4" />
           </button>
         </div>

@@ -654,56 +654,49 @@ export const MinimalTemplate: React.FC<TemplateProps> = ({ cv }) => {
 // =============================================================================
 
 export const TEMPLATE_COMPONENTS: Record<string, React.FC<TemplateProps>> = {
-  // Professional / Classic
+  // Professional / Classic (Centered, Elegant)
   'professional': ProfessionalTemplate,
   'classic-professional': ProfessionalTemplate,
   
-  // Tech / Engineering
+  // Tech / Engineering (Modern Left-aligned, Tech tags)
   'tech-focused': TechFocusedTemplate,
   'software-engineer': TechFocusedTemplate,
-  'mobile-app-developer': MobileAppDeveloperTemplate,
   'systems-engineer': SystemsEngineerTemplate,
+  'devops-engineer': TechFocusedTemplate,
   
-  // Entry Level / Fresher
+  // Entry Level / Fresher (Education-first)
   'fresher': FresherTemplate,
   'entry-level': FresherTemplate,
   
-  // Data Science / Analytics
+  // Data Science & AI/ML
   'data-scientist': DataScienceTemplate,
   'data-science': DataScienceTemplate,
-  
-  // AI/ML
   'ai-ml-engineer': AIMLTemplate,
   'ai-ml': AIMLTemplate,
   
-  // Minimal
+  // Minimal & Modern Strategic
   'minimal': MinimalTemplate,
   'modern-minimal': MinimalTemplate,
   
-  // Executive
+  // Executive & Leadership
   'executive': ExecutiveTemplate,
-  
-  // Creative
-  'creative': CreativeTemplate,
-  'creative-bold': CreativeBoldTemplate,
-  'designer': DesignerTemplate,
-  'graphic-designer': DesignerTemplate,
-  'video-editor': VideoEditorTemplate,
-  'content-writer': ContentWriterTemplate,
-  
-  // Freelancer
-  'freelancer': FreelancerTemplate,
-  
-  // Business & Management
   'project-manager': ExecutiveTemplate,
+  
+  // Business, Marketing & Analytical
   'business-analyst': MinimalTemplate,
   'marketing': MinimalTemplate,
   
   // Academic
   'academic': ProfessionalTemplate,
   
-  // DevOps
-  'devops-engineer': TechFocusedTemplate,
+  // Legacy / Deprecated Layouts mapped to Gold Standards for backwards compatibility
+  'creative': MinimalTemplate,
+  'creative-bold': MinimalTemplate,
+  'designer': MinimalTemplate,
+  'graphic-designer': MinimalTemplate,
+  'video-editor': TechFocusedTemplate,
+  'mobile-app-developer': TechFocusedTemplate,
+  'freelancer': ProfessionalTemplate,
 };
 
 // Default template selector
@@ -881,34 +874,34 @@ export const OrderedTemplate: React.FC<TemplateProps & { templateName?: string }
   );
 };
 
-// Template metadata for UI
+// Template metadata for UI - Enforces 100% Single-Column, high-ATS gold-standards (91%+)
 export const TEMPLATE_INFO = [
   // === Engineering & Tech ===
   {
     id: 'software-engineer',
     name: 'Software Engineer',
-    description: 'Skills-first layout optimized for software engineering roles',
+    description: 'Skills-first, single-column layout optimized for software engineering, fullstack, and frontend roles',
     roles: ['software-engineer', 'devops', 'backend', 'frontend', 'full-stack'],
     atsScore: 94,
-    preview: '💻',
-    category: 'Engineering & Tech',
-  },
-  {
-    id: 'mobile-app-developer',
-    name: 'Mobile App Developer',
-    description: 'Showcases app projects and mobile development expertise',
-    roles: ['mobile-app-developer', 'ios-developer', 'android-developer'],
-    atsScore: 93,
-    preview: '📱',
+    preview: '[Code]',
     category: 'Engineering & Tech',
   },
   {
     id: 'systems-engineer',
-    name: 'Systems Engineer',
-    description: 'Infrastructure and DevOps focused with certifications emphasis',
+    name: 'Systems Engineer / Monospace',
+    description: 'Infrastructure and DevOps focused single-column layout with clean terminal/monospace style',
     roles: ['systems-engineer', 'devops', 'infrastructure', 'cloud-engineer'],
     atsScore: 93,
-    preview: '🖥️',
+    preview: '[Sys]',
+    category: 'Engineering & Tech',
+  },
+  {
+    id: 'devops-engineer',
+    name: 'DevOps Engineer',
+    description: 'CI/CD, cloud infrastructure, and reliability engineering single-column focus',
+    roles: ['devops-engineer', 'site-reliability', 'cloud-engineer', 'platform-engineer'],
+    atsScore: 94,
+    preview: '[Ops]',
     category: 'Engineering & Tech',
   },
   
@@ -916,129 +909,87 @@ export const TEMPLATE_INFO = [
   {
     id: 'data-scientist',
     name: 'Data Scientist',
-    description: 'ML/AI projects first with technical skills emphasis',
+    description: 'Sky-blue header, single-column layout with ML/AI projects and technical skills emphasis',
     roles: ['data-scientist', 'ml-engineer', 'data-analyst', 'research-analyst'],
     atsScore: 94,
-    preview: '📊',
+    preview: '[Data]',
     category: 'Data & AI',
   },
   {
     id: 'ai-ml-engineer',
     name: 'AI/ML Engineer',
-    description: 'Research and project-focused for AI and ML specialists',
+    description: 'Vibrant single-column tech-monospace layout optimized for AI and ML engineering roles',
     roles: ['ai-ml-engineer', 'ml-researcher', 'deep-learning'],
     atsScore: 94,
-    preview: '🤖',
+    preview: '[AI]',
     category: 'Data & AI',
-  },
-  
-  // === Creative ===
-  {
-    id: 'graphic-designer',
-    name: 'Graphic Designer',
-    description: 'Visual portfolio and tool proficiency focused',
-    roles: ['graphic-designer', 'visual-designer', 'brand-designer'],
-    atsScore: 89,
-    preview: '🎨',
-    category: 'Creative',
-  },
-  {
-    id: 'video-editor',
-    name: 'Video Editor',
-    description: 'Video portfolio and production skills emphasis',
-    roles: ['video-editor', 'motion-designer', 'videographer'],
-    atsScore: 88,
-    preview: '🎬',
-    category: 'Creative',
-  },
-  {
-    id: 'content-writer',
-    name: 'Content Writer',
-    description: 'Portfolio and writing samples emphasis',
-    roles: ['content-writer', 'copywriter', 'editor', 'journalist', 'technical-writer'],
-    atsScore: 91,
-    preview: '✍️',
-    category: 'Creative',
-  },
-  
-  // === General ===
-  {
-    id: 'fresher',
-    name: 'Entry-Level / Fresher',
-    description: 'Education and projects first, perfect for students and new graduates',
-    roles: ['fresher', 'intern', 'graduate', 'entry-level'],
-    atsScore: 90,
-    preview: '🎓',
-    category: 'General',
-  },
-  {
-    id: 'executive',
-    name: 'Executive',
-    description: 'Distinguished format for C-level and senior leadership roles',
-    roles: ['executive', 'director', 'vp', 'ceo', 'cto', 'cfo', 'product-manager', 'project-manager', 'program-manager', 'operations-manager'],
-    atsScore: 95,
-    preview: '👔',
-    category: 'General',
-  },
-  {
-    id: 'freelancer',
-    name: 'Freelancer',
-    description: 'Client-focused layout for independent consultants and contractors',
-    roles: ['freelancer', 'consultant', 'self-employed', 'contractor'],
-    atsScore: 90,
-    preview: '💼',
-    category: 'General',
   },
   
   // === Business & Management ===
   {
     id: 'project-manager',
     name: 'Project Manager',
-    description: 'Methodology and delivery metrics focused for PM and Scrum Master roles',
+    description: 'Methodology and delivery metrics focused single-column layout for PM and Scrum Master roles',
     roles: ['project-manager', 'program-manager', 'scrum-master', 'product-manager'],
     atsScore: 94,
-    preview: '📋',
+    preview: '[PM]',
     category: 'Business & Management',
   },
   {
     id: 'business-analyst',
     name: 'Business Analyst',
-    description: 'Requirements analysis and data-driven insights emphasis',
+    description: 'Strategic PM/analyst single-column layout emphasizing requirements analysis and data insights',
     roles: ['business-analyst', 'data-analyst', 'financial-analyst', 'operations-manager'],
     atsScore: 93,
-    preview: '📊',
+    preview: '[BA]',
     category: 'Business & Management',
   },
   {
     id: 'marketing',
     name: 'Marketing Professional',
-    description: 'Campaign metrics, ROI, and growth-focused layout for marketing roles',
+    description: 'Single-column growth-focused layout highlighting campaign metrics, ROI, and core marketing skills',
     roles: ['social-media-manager', 'seo-specialist', 'marketing-manager', 'brand-manager'],
     atsScore: 92,
-    preview: '📣',
+    preview: '[Mkt]',
     category: 'Business & Management',
   },
   
-  // === Academic ===
+  // === General & Leadership ===
+  {
+    id: 'executive',
+    name: 'Executive Leadership',
+    description: 'Premium single-column serif format for C-level, management, and senior leadership roles',
+    roles: ['executive', 'director', 'vp', 'ceo', 'cto', 'cfo', 'operations-manager'],
+    atsScore: 95,
+    preview: '[Exec]',
+    category: 'General',
+  },
+  {
+    id: 'fresher',
+    name: 'Entry-Level / Fresher',
+    description: 'Education and academic projects first, perfect for students, interns, and new graduates',
+    roles: ['fresher', 'intern', 'graduate', 'entry-level'],
+    atsScore: 91,
+    preview: '[Grad]',
+    category: 'General',
+  },
   {
     id: 'academic',
     name: 'Academic / Research',
-    description: 'Publications-first layout for professors, researchers, and PhD candidates',
+    description: 'Publications-first single-column layout for professors, researchers, and PhD candidates',
     roles: ['academic', 'professor', 'researcher', 'postdoc', 'clinical-research'],
     atsScore: 91,
-    preview: '🎓',
+    preview: '[Acad]',
     category: 'General',
   },
-  
-  // === Engineering (additional) ===
   {
-    id: 'devops-engineer',
-    name: 'DevOps Engineer',
-    description: 'CI/CD, cloud infrastructure, and reliability engineering focus',
-    roles: ['devops-engineer', 'site-reliability', 'cloud-engineer', 'platform-engineer'],
-    atsScore: 94,
-    preview: '🔧',
-    category: 'Engineering & Tech',
+    id: 'content-writer',
+    name: 'Content & Technical Writer',
+    description: 'Writing samples, portfolio links, and technical communication emphasis',
+    roles: ['content-writer', 'copywriter', 'editor', 'journalist', 'technical-writer'],
+    atsScore: 91,
+    preview: '[Write]',
+    category: 'General',
   },
 ];
 

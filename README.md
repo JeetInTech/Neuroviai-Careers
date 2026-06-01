@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚀 CV Forge
+# Neuroviai Careers
 
 ### AI-Powered ATS-Optimized Resume Builder
 
@@ -84,23 +84,47 @@
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Architecture & Workflows
 
+### System Architecture
+The platform is designed with a modern, decoupled client-server architecture:
+
+```mermaid
+graph TD
+    User[Browser Client - React SPA]
+    FastAPI[FastAPI Server - Python]
+    Supa[Supabase DB / Auth]
+    Groq[Groq API - Llama 3.3 70B]
+
+    User -- "REST APIs & Auth" --> FastAPI
+    User -- "Direct Auth Queries" --> Supa
+    FastAPI -- "Admin Operations / DB Sync" --> Supa
+    FastAPI -- "AI Text Generation / Tailoring" --> Groq
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│                 │     │                 │     │                 │
-│   React SPA     │────▶│   FastAPI       │────▶│   Supabase      │
-│   (Frontend)    │     │   (Backend)     │     │   (Database)    │
-│                 │     │                 │     │                 │
-└─────────────────┘     └────────┬────────┘     └─────────────────┘
-                                 │
-                                 ▼
-                        ┌─────────────────┐
-                        │                 │
-                        │   Groq API      │
-                        │   (AI/LLM)      │
-                        │                 │
-                        └─────────────────┘
+
+### AI Resume Tailoring Pipeline
+When a user provides a job description, the platform optimizes and tailors the resume through a multi-phase AI pipeline:
+
+```mermaid
+sequenceDiagram
+    participant U as Client (React)
+    participant A as router/ai.py
+    participant S as service/ai_service.py
+    participant G as Groq API
+
+    U ->> A: Request tailoring (CV Data + Job Desc)
+    A ->> S: Call tailor_resume_to_job()
+    S ->> G: Phase 1: Extract Skills, Key Responsibilities, and Keywords
+    G -->> S: Returns Structured Job Analysis
+    S ->> G: Phase 2: Rewrite Professional Summary incorporating Keywords
+    G -->> S: Returns Tailored Summary
+    S ->> G: Phase 3: Rewrite Experience Bullets (Quantifying achievements & inserting Action Verbs)
+    G -->> S: Returns Tailored Experience Bullets
+    S ->> G: Phase 4: Reorder and prune skills list to match targets
+    G -->> S: Returns Optimized Skills
+    S ->> G: Phase 5: Calculate overall Match Score (Skill, Experience & Keywords matching)
+    G -->> S: Returns Final Score
+    S -->> U: Delivers fully tailored CV payload
 ```
 
 ---
@@ -264,13 +288,14 @@ http://localhost:8000/api
 | POST | `/ai/enhance-text` | Enhance existing text |
 | POST | `/ai/generate-skills` | Generate relevant skills |
 | POST | `/ai/generate-bullets` | Generate experience bullets |
-| POST | `/ai/suggestions` | Get CV improvement suggestions |
+| POST | `/ai/suggest-improvements` | Get CV improvement suggestions |
+| POST | `/ai/tailor-resume` | Tailor resume to a job description |
 
 ### Document Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/document/parse-pdf` | Parse uploaded PDF resume |
+| POST | `/document/parse` | Parse uploaded PDF or DOCX resume |
 
 ---
 

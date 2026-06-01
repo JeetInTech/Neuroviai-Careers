@@ -195,6 +195,8 @@ export type CV = {
 
 export type CustomSection = {
   title: string;
+  /** How items are rendered in LaTeX: bullets = itemize list, entries = standalone lines, profiles = tabularx table */
+  section_type?: 'bullets' | 'entries' | 'profiles';
   items: {
     title: string;
     subtitle?: string;

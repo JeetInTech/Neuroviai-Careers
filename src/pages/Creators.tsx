@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, Heart, MessageCircle, Eye, Lock } from 'lucide-react';
+import { User, Heart, MessageCircle, Eye, X, LogIn, Layout } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 type Post = {
@@ -151,8 +151,13 @@ export default function Creators() {
     }
   };
 
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   const handleUseTemplate = (postId: string) => {
-    if (!user) return;
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
     navigate(`/cv/use/${postId}`);
   };
 
@@ -177,24 +182,59 @@ export default function Creators() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-transparent py-12 text-gray-900 dark:text-white">
+      {/* Login Required Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowLoginModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="p-4 bg-indigo-100 rounded-2xl">
+                <Layout className="h-8 w-8 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Sign in to use templates</h3>
+                <p className="text-sm text-gray-500 mt-2">
+                  Create a free account or log in to use community templates and start building your CV.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 w-full mt-1">
+                <button
+                  onClick={() => navigate('/login')}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Log in
+                </button>
+                <button
+                  onClick={() => navigate('/signup')}
+                  className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Create free account
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">CV Showcase</h1>
-          {!user && (
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <p className="text-sm text-yellow-700">
-                Sign in to like, comment, and use templates
-              </p>
-            </div>
-          )}
+  
         </div>
 
         <div className="space-y-8">
@@ -249,24 +289,10 @@ export default function Creators() {
                   </div>
                   <button
                     onClick={() => handleUseTemplate(post.id)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-                      user 
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    }`}
-                    disabled={!user}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
                   >
-                    {user ? (
-                      <>
-                        <Eye className="h-4 w-4" />
-                        <span>Use Template</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-4 w-4" />
-                        <span>Login to Use</span>
-                      </>
-                    )}
+                    <Eye className="h-4 w-4" />
+                    <span>Use Template</span>
                   </button>
                 </div>
                 

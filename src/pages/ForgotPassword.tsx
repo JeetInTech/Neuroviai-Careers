@@ -27,9 +27,9 @@ export default function ForgotPassword() {
 
   if (emailSent) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-transparent flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-gray-900 dark:text-white">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-6 shadow sm:rounded-lg">
+          <div className="bg-white dark:bg-slate-900 py-8 px-6 shadow sm:rounded-lg border border-gray-100 dark:border-white/5">
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
@@ -67,21 +67,21 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-transparent flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-gray-900 dark:text-white">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <Mail className="w-12 h-12 text-indigo-600" />
+          <Mail className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           Reset your password
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-gray-500 dark:text-white/50">
           Enter your email address and we'll send you instructions to reset your password.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white dark:bg-slate-900 py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100 dark:border-white/5">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">

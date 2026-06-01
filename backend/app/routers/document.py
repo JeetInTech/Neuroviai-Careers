@@ -89,7 +89,8 @@ def extract_text_from_pdf(file_content: bytes) -> str:
     # Clean up the text
     text = re.sub(r'\n{4,}', '\n\n\n', text)  # Remove excessive newlines
     text = re.sub(r' {3,}', '  ', text)  # Reduce excessive spaces
-    text = re.sub(r'(\S)\s*\n\s*(\S)', r'\1 \2', text)  # Join broken lines
+    # Only join continuation lines (line ends mid-sentence, next line continues lowercase)
+    text = re.sub(r'([a-z,;)])\n([a-z(])', r'\1 \2', text)
     
     return text.strip()
 
@@ -613,7 +614,7 @@ def extract_personal_info(text: str) -> dict:
         # Remove section headers if they got included
         for header in SECTION_HEADERS['summary']:
             summary = re.sub(rf'^{header}\s*[:.\-]?\s*', '', summary, flags=re.IGNORECASE)
-        personal_info['summary'] = summary[:800]  # Limit summary length
+        personal_info['summary'] = summary[:3000]  # Preserve the full summary
     
     return personal_info
 
@@ -901,13 +902,17 @@ Return ONLY valid JSON, no explanation."""
         
         result = response.choices[0].message.content.strip()
         
-        # Clean up JSON response
-        if result.startswith('```json'):
-            result = result[7:]
-        if result.startswith('```'):
-            result = result[3:]
-        if result.endswith('```'):
-            result = result[:-3]
+        # Clean up JSON response using robust regex
+        json_match = re.search(r'\{.*\}', result, re.DOTALL)
+        if json_match:
+            result = json_match.group(0)
+        else:
+            if result.startswith('```json'):
+                result = result[7:]
+            if result.startswith('```'):
+                result = result[3:]
+            if result.endswith('```'):
+                result = result[:-3]
         
         return json.loads(result)
     except Exception as e:
@@ -1123,3 +1128,39 @@ async def check_latex_status():
         "path": pdflatex_path,
         "message": "pdflatex found" if pdflatex_path else "pdflatex not installed. Install TeX Live or MiKTeX for LaTeX compilation."
     }
+
+
+class ExportPdfRequest(BaseModel):
+    template: str
+    target_role: Optional[str] = "other"
+    personal_info: dict
+    education: List[dict] = []
+    experience: List[dict] = []
+    skills: List[dict] = []
+    languages: List[dict] = []
+    certifications: List[dict] = []
+    projects: List[dict] = []
+    accent_color: Optional[str] = None
+    is_grayscale: Optional[bool] = False
+
+
+@router.post("/export-pdf")
+async def export_pdf(request: ExportPdfRequest):
+    """Fallback endpoint to generate PDF using pure FPDF2"""
+    try:
+        from ..services.pdf_service import generate_pdf
+        pdf_bytes = generate_pdf(request.model_dump())
+        filename = f"{request.personal_info.get('full_name', 'resume')}_ATS.pdf".replace(" ", "_")
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'inline; filename="{filename}"'
+            }
+        )
+    except Exception as e:
+        logger.error(f"FPDF2 PDF Generation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Pure PDF generation failed: {str(e)}"
+        )

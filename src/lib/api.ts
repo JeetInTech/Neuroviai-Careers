@@ -432,6 +432,65 @@ class ApiClient {
   async checkLatexStatus(): Promise<{ available: boolean; path: string | null; message: string }> {
     return this.request('/document/latex-status');
   }
+
+  // Export PDF using pure FPDF2 fallback
+  async exportPDF(cvData: Record<string, unknown>): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}/document/export-pdf`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.accessToken && { 'Authorization': `Bearer ${this.accessToken}` }),
+      },
+      body: JSON.stringify(cvData),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'PDF generation failed');
+    }
+    
+    return response.blob();
+  }
+
+  // Client-side helper to export PDF by ID (used by portfolio/profile)
+  async exportPDFById(cvId: string): Promise<Blob> {
+    const cv = await this.getCV(cvId);
+    try {
+      const { generateATSResumeLaTeX } = await import('./latex-generator');
+      const latexSource = generateATSResumeLaTeX(cv);
+      return await this.compileLaTeX(latexSource, cv.personal_info.full_name);
+    } catch (err) {
+      console.warn('LaTeX compiler unavailable on server, falling back to FPDF2:', err);
+      // Construct exact CV data for fallback
+      const cvData = {
+        template: cv.template,
+        target_role: cv.target_role,
+        personal_info: cv.personal_info,
+        education: cv.education,
+        experience: cv.experience,
+        skills: cv.skills,
+        languages: cv.languages,
+        certifications: cv.certifications,
+        projects: cv.projects,
+        accent_color: cv.accent_color,
+        is_grayscale: cv.is_grayscale,
+      };
+      return await this.exportPDF(cvData as unknown as Record<string, unknown>);
+    }
+  }
+
+  // Check guest template usage status (by IP)
+  async checkGuestStatus(): Promise<{ used: boolean; template_id?: string; used_at?: string }> {
+    return this.request('/guest/status');
+  }
+
+  // Record guest template selection by IP
+  async recordGuestTemplate(templateId: string): Promise<{ success: boolean; template_id: string; message: string }> {
+    return this.request('/guest/use-template', {
+      method: 'POST',
+      body: JSON.stringify({ template_id: templateId }),
+    });
+  }
 }
 
 export const api = new ApiClient(API_URL);
